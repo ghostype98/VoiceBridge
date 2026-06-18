@@ -1,5 +1,7 @@
 # VoiceBridge
 
+Enterprise-level AI real-time interview service
+
 智能语音面试系统：浏览器麦克风 → WebSocket 流式上传 → **阿里云实时语音识别** → 本地 LLM 实时评分与追问。
 
 ## 功能概览

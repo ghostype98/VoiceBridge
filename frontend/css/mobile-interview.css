@@ -1,0 +1,979 @@
+/* 移动端面试页面专用样式 - 分屏布局 */
+
+/* 基础样式重置 */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100% !important; /* 确保html和body有明确高度 */
+    width: 100% !important;
+    font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0;
+    padding: 0;
+    width: 100% !important;
+    height: 100% !important; /* 确保body有明确高度 */
+    overflow: hidden; /* 防止移动端页面出现滚动条 */
+}
+
+/* 移动端容器 - 确保覆盖所有可能的样式冲突 */
+.mobile-interview-container {
+    height: 100vh !important; /* 使用固定高度，而不是min-height */
+    min-height: 100vh !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    overflow: hidden !important;
+    position: relative !important;
+    /* 确保容器有明确的高度，子元素才能正确计算 */
+}
+
+/* 确保移动端页面不使用电脑端的interview-container样式 */
+body:has(.mobile-interview-container) .interview-container {
+    display: none !important;
+}
+
+/* 强制覆盖任何可能的电脑端样式 */
+body .mobile-interview-container {
+    min-height: 100vh !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* 确保移动端分屏布局始终显示 - 第二部分、第三部分、第四部分 */
+.mobile-interview-container .mobile-split-layout {
+    flex: 1 1 0% !important; /* 使用0%而不是auto，确保正确计算剩余空间 */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important; /* 关键：允许flex子元素缩小 */
+    width: 100% !important;
+    /* 确保在header之后显示 */
+    order: 2 !important;
+    /* 确保占满剩余空间 */
+    height: 0 !important; /* flex: 1 会自动扩展，但需要初始高度为0 */
+    max-height: none !important; /* 移除最大高度限制 */
+    box-sizing: border-box !important;
+}
+
+/* 顶部进度条区域 */
+.mobile-interview-container .interview-progress-bar {
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+}
+
+.mobile-interview-container .progress-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mobile-interview-container .question-counter {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mobile-interview-container .interview-countdown {
+    margin-top: 8px;
+}
+
+.mobile-interview-container .countdown-text {
+    font-size: 16px;
+}
+
+/* 顶部导航栏 - 第一部分：面试者信息、时间、调试按钮等 */
+.mobile-interview-container .interview-header {
+    background: rgba(102, 126, 234, 0.1) !important;
+    backdrop-filter: blur(15px) !important;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2) !important;
+    padding: 10px 15px !important;
+    flex: 0 0 auto !important; /* 不允许收缩和扩展，保持内容高度 */
+    flex-shrink: 0 !important; /* 不允许收缩，确保始终显示 */
+    flex-grow: 0 !important; /* 不允许扩展，保持固定高度 */
+    position: relative !important;
+    z-index: 100 !important;
+    width: 100% !important;
+    display: block !important; /* 强制显示 */
+    visibility: visible !important; /* 强制可见 */
+    opacity: 1 !important; /* 强制不透明 */
+    min-height: auto !important; /* 确保有高度 */
+    height: auto !important; /* 自动高度，根据内容 */
+    max-height: none !important; /* 不限制最大高度 */
+    overflow: visible !important; /* 确保内容可见 */
+    /* 确保header在flex容器中正确显示 */
+    order: 1 !important; /* 确保在mobile-split-layout之前 */
+    /* 确保header不会被挤出视口 */
+    box-sizing: border-box !important;
+}
+
+/* 确保header-content始终显示 */
+.mobile-interview-container .header-content {
+    display: flex !important;
+    flex-direction: row; /* 改为横向布局，让左右并排显示 */
+    align-items: center; /* 垂直居中 */
+    justify-content: space-between; /* 左右两端对齐 */
+    gap: 10px;
+    width: 100%;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: auto !important;
+    flex-wrap: wrap; /* 允许换行 */
+    position: relative; /* 为绝对定位的退出按钮提供定位上下文 */
+}
+
+.mobile-interview-container .header-left {
+    flex: 0 0 auto; /* 不扩展，根据内容自适应 */
+    display: flex;
+    align-items: center;
+    gap: 12px; /* AI面试系统和剩余时间之间的间距 */
+    min-width: 0;
+    flex-wrap: wrap; /* 允许换行 */
+}
+
+.mobile-interview-container .header-center {
+    flex: 1 1 auto; /* 占据剩余空间，可以扩展和收缩 */
+    display: flex !important; /* 强制显示 */
+    flex-direction: row; /* 横向排列用户名和岗位 */
+    align-items: center; /* 垂直居中 */
+    gap: 8px;
+    min-width: 0; /* 允许收缩 */
+    visibility: visible !important; /* 强制可见 */
+    opacity: 1 !important; /* 强制不透明 */
+    overflow: hidden; /* 防止内容溢出 */
+    padding-right: 60px; /* 为右上角的退出按钮留出空间 */
+}
+
+.mobile-interview-container .header-right {
+    flex: 0 0 auto; /* 不扩展，根据内容自适应 */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+    position: absolute; /* 绝对定位 */
+    top: 10px; /* 距离顶部10px */
+    right: 15px; /* 距离右边15px */
+    z-index: 10; /* 确保在其他元素之上 */
+}
+
+.mobile-interview-container .header-left h1 {
+    color: #ffffff;
+    font-size: 20px; /* AI面试系统字体增大 */
+    font-weight: 600; /* 加粗 */
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap; /* 不换行 */
+}
+
+.mobile-interview-container .user-info {
+    display: flex !important; /* 强制显示 */
+    flex-direction: row; /* 改为横向排列，用户名和岗位并排显示 */
+    align-items: center;
+    gap: 8px; /* 增加间距 */
+    flex: 1 1 auto; /* 占据剩余空间 */
+    min-width: 0;
+    visibility: visible !important; /* 强制可见 */
+    opacity: 1 !important; /* 强制不透明 */
+    flex-wrap: wrap; /* 允许换行 */
+}
+
+.mobile-interview-container .user-info span {
+    color: #ffffff !important; /* 强制白色，确保可见 */
+    font-size: 11px; /* 稍微减小字体 */
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block !important; /* 强制显示 */
+    visibility: visible !important; /* 强制可见 */
+    opacity: 1 !important; /* 强制不透明 */
+    flex: 0 1 auto; /* 根据内容自适应，可以收缩 */
+}
+
+.mobile-interview-container .interview-status {
+    flex: 0 0 auto; /* 不扩展，根据内容自适应 */
+    display: flex !important; /* 强制显示 */
+    align-items: center;
+    visibility: visible !important; /* 强制可见 */
+    opacity: 1 !important; /* 强制不透明 */
+    margin: 0; /* 移除margin，与AI面试系统在同一行 */
+}
+
+.mobile-interview-container .interview-status span {
+    color: #ffeb3b !important; /* 改为醒目的黄色 */
+    font-size: 14px; /* 增大字体，更醒目 */
+    font-weight: 700; /* 加粗 */
+    white-space: nowrap;
+    display: inline-block !important; /* 强制显示 */
+    visibility: visible !important; /* 强制可见 */
+    opacity: 1 !important; /* 强制不透明 */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* 添加文字阴影，更醒目 */
+    padding: 2px 6px; /* 添加内边距 */
+    background: rgba(255, 235, 59, 0.2); /* 添加背景色 */
+    border-radius: 4px; /* 圆角 */
+}
+
+.mobile-interview-container .logout-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    width: auto; /* 改为自动宽度，可以显示更多内容 */
+    min-width: 36px; /* 最小宽度 */
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-interview-container .logout-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.mobile-interview-container .permission-indicator {
+    font-size: 10px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 移动端分屏布局 - 包含：第二部分（题目）、第三部分（按钮进度）、第四部分（回答内容） */
+.mobile-split-layout {
+    flex: 1 1 0% !important; /* 使用0%确保占据所有剩余空间（header之后的所有空间） */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important; /* 重要：允许flex子元素缩小 */
+    width: 100% !important;
+    /* 确保在header之后显示 */
+    order: 2;
+    /* 确保占满剩余高度 */
+    height: 0 !important; /* flex: 1 会自动扩展，但需要初始高度为0 */
+}
+
+/* 上半部分：题目区域 - 第二部分 */
+.question-section {
+    flex: 1 1 25% !important; /* 可收缩，最小25%，优先分配剩余空间 */
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    overflow: hidden;
+    min-height: 0;
+    max-height: none; /* 移除最大高度限制，让flex布局自然分配 */
+    /* 确保有明确的高度，以便子元素可以正确计算滚动 */
+    height: 0; /* flex: 1 会自动扩展，但需要初始高度为0 */
+}
+
+.question-section .section-header {
+    padding: 12px 15px;
+    background: rgba(102, 126, 234, 0.1);
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+    flex-shrink: 0;
+}
+
+.question-section .section-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px; /* 比AI面试系统(20px)小，但比题目文字(16px)大 */
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.question-section .section-header h3 i {
+    color: #667eea;
+}
+
+.question-section .question-content {
+    flex: 1 1 auto; /* 允许收缩和扩展 */
+    overflow-y: auto !important; /* 强制启用滚动 */
+    overflow-x: hidden;
+    padding: 15px;
+    min-height: 0 !important; /* 关键：允许flex子元素缩小到内容以下 */
+    max-height: none;
+    -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+    position: relative;
+    /* 不设置height: 100%，让flex布局自然计算高度 */
+    /* 强制启用触摸滚动 */
+    touch-action: pan-y;
+    /* 确保可以滚动 */
+    will-change: scroll-position;
+}
+
+.question-section .chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0;
+}
+
+.question-section .message {
+    display: flex;
+    gap: 10px;
+    max-width: 100%;
+    animation: messageSlideIn 0.3s ease;
+}
+
+.question-section .bot-message {
+    align-self: flex-start;
+}
+
+.question-section .user-message {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.question-section .message-bubble {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 16px; /* 题目文字，比"当前题目"标题(18px)小 */
+    line-height: 1.8; /* 增加行高，提升可读性 */
+    max-width: 85%;
+    word-wrap: break-word;
+}
+
+.question-section .bot-message .message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-left-radius: 4px;
+}
+
+.question-section .user-message .message-bubble {
+    background: rgba(102, 126, 234, 0.1);
+    color: #333;
+    border-bottom-right-radius: 4px;
+}
+
+.question-section .message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+}
+
+.question-section .bot-avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.question-section .user-avatar {
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+}
+
+/* 中间：按钮区域 */
+.button-section {
+    flex: 0 0 auto !important; /* 固定高度，不参与flex分配，根据内容自适应 */
+    flex-shrink: 0 !important; /* 不允许收缩 */
+    flex-grow: 0 !important; /* 不允许扩展 */
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.98);
+    border-top: 2px solid rgba(102, 126, 234, 0.3);
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 120px; /* 最小高度，确保按钮可见 */
+    max-height: none; /* 移除最大高度限制 */
+}
+
+.button-section .button-container {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.button-section .start-answer-btn,
+.button-section .end-interview-btn {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: none; /* 移除所有过渡动画，避免闪动 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.button-section .start-answer-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.button-section .start-answer-btn:hover:not(:disabled) {
+    /* 移除hover动画，保持静态 - 不添加任何样式 */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.button-section .start-answer-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-section .end-interview-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.button-section .end-interview-btn:hover:not(:disabled) {
+    /* 移除hover动画，保持静态 - 不添加任何样式 */
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.button-section .end-interview-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-section .recording-display {
+    width: 100%;
+    padding: 10px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.button-section .status-text {
+    font-size: 14px;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.button-section .recording-wave {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.button-section .wave-bar {
+    width: 4px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 2px;
+    animation: wave 1s ease-in-out infinite;
+}
+
+.button-section .wave-bar:nth-child(1) { animation-delay: 0s; }
+.button-section .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.button-section .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.button-section .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+.button-section .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes wave {
+    0%, 100% { transform: scaleY(0.5); }
+    50% { transform: scaleY(1); }
+}
+
+.button-section .progress-container {
+    width: 100%;
+}
+
+.button-section .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* 垂直居中 */
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #666;
+    gap: 8px; /* 添加间距 */
+}
+
+.button-section .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.button-section .progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+}
+
+/* 下半部分：转写内容区域 - 第四部分 */
+.transcription-section {
+    flex: 1 1 auto !important; /* 自适应占据剩余空间 */
+    display: flex !important;
+    flex-direction: column !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    overflow: hidden !important;
+    min-height: 0 !important; /* 关键：允许flex子元素缩小 */
+    max-height: none !important; /* 移除最大高度限制，让flex布局自然分配 */
+    /* 确保占满剩余高度 */
+    height: 0 !important; /* flex: 1 会自动扩展，但需要初始高度为0 */
+}
+
+.transcription-section .section-header {
+    padding: 12px 15px;
+    background: rgba(102, 126, 234, 0.1);
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 左对齐，让标题和提示在一行 */
+    flex-wrap: nowrap; /* 不换行，确保在一行 */
+    gap: 10px; /* 增加间距 */
+}
+
+.transcription-section .section-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px; /* 比AI面试系统(20px)小，但比题目文字(16px)大 */
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto; /* 不扩展，保持内容宽度 */
+}
+
+.transcription-section .section-header h3 i {
+    color: #667eea;
+}
+
+.transcription-section .transcription-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+}
+
+.transcription-section .transcription-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 移动端转写容器始终显示（因为它在固定区域内） */
+.transcription-section .transcription-container[style*="display: none"] {
+    display: flex !important;
+}
+
+/* 确保转写区域始终显示 - 移除强制样式，使用正确的flex布局 */
+.mobile-interview-container .transcription-section {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.transcription-section .transcription-text {
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    line-height: 1.8;
+    font-size: 14px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+}
+
+.transcription-section .final-text {
+    color: #333;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-bottom: 8px;
+}
+
+.transcription-section .intermediate-text {
+    color: #999;
+    font-style: italic;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.transcription-section .empty-text {
+    color: #999;
+    text-align: center;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+.transcription-section .transcription-text .transcription-text-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.transcription-section .volume-visualizer-wrap {
+    flex: 1;
+    min-height: 100px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.transcription-section .volume-visualizer-wrap:not(.volume-visualizer-wrap--visible) {
+    display: none !important;
+}
+
+.transcription-section .volume-visualizer-wrap.volume-visualizer-wrap--visible {
+    display: flex !important;
+}
+
+.transcription-section .volume-visualizer-canvas {
+    width: 100%;
+    height: 88px;
+    display: block;
+}
+
+.transcription-section .volume-visualizer-label {
+    font-size: 12px;
+    color: #909399;
+    user-select: none;
+}
+
+/* 自动跳转提示样式 - 放在标题行后面 */
+.transcription-section .section-header .auto-advance-tip {
+    padding: 4px 8px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-left: 2px solid #667eea;
+    border-radius: 4px;
+    display: flex !important; /* 始终显示，强制显示 */
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: #667eea;
+    line-height: 1.4;
+    flex: 0 0 auto; /* 不扩展，根据内容自适应 */
+    white-space: nowrap; /* 不换行 */
+    margin-left: auto; /* 自动推到右侧 */
+}
+
+.transcription-section .section-header .auto-advance-tip i {
+    font-size: 11px;
+    flex-shrink: 0;
+    color: #667eea;
+}
+
+.transcription-section .section-header .auto-advance-tip span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 提示动画 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 消息动画 */
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 模态框样式 */
+.mobile-interview-container ~ .modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-interview-container ~ .modal .modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 25px 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-interview-container ~ .modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.mobile-interview-container ~ .modal .modal-header h3 {
+    color: #333;
+    font-size: 18px;
+    margin: 0;
+}
+
+.mobile-interview-container ~ .modal .close {
+    color: #aaa;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* 超小屏幕优化 */
+@media screen and (max-width: 480px) {
+    .question-section {
+        flex: 1 1 25% !important; /* 超小屏幕保持25%的题目区域 */
+    }
+    
+    .question-section .message-bubble {
+        font-size: 14px; /* 超小屏幕稍微减小字体 */
+        line-height: 1.7;
+    }
+    
+    .transcription-section {
+        flex: 1 1 auto !important; /* 超小屏幕也自适应占据剩余空间 */
+    }
+    
+    .button-section .start-answer-btn,
+    .button-section .end-interview-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+}
+
+/* 横屏模式优化 */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .question-section {
+        flex: 1 1 25% !important; /* 横屏模式保持25%的题目区域 */
+    }
+    
+    .transcription-section {
+        flex: 1 1 auto !important; /* 横屏模式也自适应占据剩余空间 */
+    }
+    
+    .button-section {
+        padding: 8px 15px;
+    }
+}
+
+/* 强制样式保护 - 确保移动端样式始终生效 */
+html body .mobile-interview-container {
+    min-height: 100vh !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    overflow: hidden !important;
+}
+
+html body .mobile-interview-container .mobile-split-layout {
+    flex: 1 1 0% !important; /* 占据header之后的所有剩余空间 */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    order: 2 !important; /* 确保在header之后 */
+    height: 0 !important; /* flex: 1 会自动扩展，但需要初始高度为0 */
+}
+
+/* 强制确保header（第一部分）始终显示 - 最高优先级 */
+html body .mobile-interview-container .interview-header,
+html body .mobile-interview-container header.interview-header,
+.mobile-interview-container .interview-header,
+.mobile-interview-container header.interview-header {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    order: 1 !important; /* 确保在最前面 */
+    position: relative !important;
+    z-index: 100 !important;
+    width: 100% !important;
+    overflow: visible !important;
+    /* 防止被其他CSS覆盖 */
+    background: rgba(102, 126, 234, 0.1) !important;
+    backdrop-filter: blur(15px) !important;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2) !important;
+    padding: 10px 15px !important;
+}
+
+/* 隐藏任何可能的电脑端元素 */
+html body .mobile-interview-container .chat-container:not(.question-content) {
+    display: none !important;
+}
+
+html body .mobile-interview-container .chat-input-area:not(.button-section) {
+    display: none !important;
+}
+
+/* 调试日志面板样式 */
+.debug-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 8px;
+    transition: all 0.3s;
+}
+
+.debug-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.debug-btn-small {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.debug-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50vh;
+    background: rgba(0, 0, 0, 0.95);
+    border-top: 2px solid #667eea;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.debug-panel-header {
+    background: #667eea;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.debug-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.debug-panel-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.debug-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #e0e0e0;
+}
+
+.debug-log-entry {
+    margin-bottom: 5px;
+    padding: 5px;
+    border-left: 3px solid transparent;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.debug-log-entry.info {
+    border-left-color: #2196F3;
+    color: #90CAF9;
+}
+
+.debug-log-entry.success {
+    border-left-color: #4CAF50;
+    color: #81C784;
+}
+
+.debug-log-entry.warning {
+    border-left-color: #FF9800;
+    color: #FFB74D;
+}
+
+.debug-log-entry.error {
+    border-left-color: #F44336;
+    color: #E57373;
+}
+
+.debug-log-entry.transcript {
+    border-left-color: #9C27B0;
+    color: #BA68C8;
+    background: rgba(156, 39, 176, 0.1);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.debug-log-entry.container {
+    border-left-color: #00BCD4;
+    color: #4DD0E1;
+    background: rgba(0, 188, 212, 0.1);
+    padding: 8px;
+    border-radius: 4px;
+}
+

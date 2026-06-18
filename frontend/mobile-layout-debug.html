@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>移动端布局占比调试工具</title>
+    <link rel="stylesheet" href="/static/css/mobile-interview.css?v=1.0.6">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 调试控制面板样式 */
+        .debug-control-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 10000;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .debug-control-panel h3 {
+            margin: 0 0 15px 0;
+            color: #667eea;
+            font-size: 16px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        
+        .debug-control-item {
+            margin-bottom: 15px;
+        }
+        
+        .debug-control-item label {
+            display: block;
+            margin-bottom: 5px;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .debug-control-item input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .debug-control-item .value-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        
+        .debug-control-item .value-display span {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .debug-info {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+        
+        .debug-info .info-item {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .debug-info .info-label {
+            color: #aaa;
+        }
+        
+        .debug-info .info-value {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+        
+        /* 确保调试页面可以正常显示布局 */
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 调试控制面板 -->
+    <div class="debug-control-panel">
+        <h3><i class="fas fa-sliders-h"></i> 布局占比调试工具</h3>
+        
+        <div class="debug-control-item">
+            <label for="questionPercent">题目区域占比 (%)</label>
+            <input type="range" id="questionPercent" min="15" max="60" value="35" step="1">
+            <div class="value-display">
+                <span>当前值:</span>
+                <span id="questionPercentValue">35%</span>
+            </div>
+        </div>
+        
+        <div class="debug-control-item">
+            <label>实际布局信息</label>
+            <div class="debug-info" id="layoutInfo">
+                <div class="info-item">
+                    <span class="info-label">题目区域高度:</span>
+                    <span class="info-value" id="questionHeight">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">回答区域高度:</span>
+                    <span class="info-value" id="answerHeight">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">按钮区域高度:</span>
+                    <span class="info-value" id="buttonHeight">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">视口总高度:</span>
+                    <span class="info-value" id="viewportHeight">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">题目/回答比例:</span>
+                    <span class="info-value" id="ratio">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="debug-control-item">
+            <label>CSS代码（复制到 mobile-interview.css）</label>
+            <textarea id="cssCode" readonly style="width: 100%; height: 80px; background: rgba(0,0,0,0.5); color: #4CAF50; border: 1px solid #667eea; border-radius: 5px; padding: 8px; font-family: 'Courier New', monospace; font-size: 11px; resize: none;"></textarea>
+        </div>
+        
+        <button class="copy-btn" onclick="copyCSSCode()">
+            <i class="fas fa-copy"></i> 复制CSS代码
+        </button>
+        
+        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2);">
+            <div style="font-size: 10px; color: #aaa; text-align: center;">
+                提示：调整滑块后，布局会实时更新
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端面试页面布局（用于调试） -->
+    <div class="mobile-interview-container">
+        <!-- 顶部导航栏 - 第一部分 -->
+        <header class="interview-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>
+                        <i class="fas fa-microphone-alt"></i>
+                        AI面试系统（调试模式）
+                    </h1>
+                </div>
+                <div class="header-center">
+                    <div class="user-info">
+                        <span>用户名: 调试用户</span>
+                        <span>面试岗位: 测试岗位</span>
+                    </div>
+                    <div class="interview-status">
+                        <span>剩余时间: 40:00</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 移动端分屏布局 -->
+        <div class="mobile-split-layout">
+            <!-- 上半部分：题目区域 - 第二部分 -->
+            <div class="question-section" id="debugQuestionSection">
+                <div class="section-header">
+                    <h3><i class="fas fa-question-circle"></i> 当前题目</h3>
+                </div>
+                <div class="question-content">
+                    <div class="chat-messages">
+                        <div class="message bot-message">
+                            <div class="message-avatar bot-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-bubble">
+                                这是一个示例题目。请描述一下您的工作经验，包括您在过去的工作中承担的主要职责和取得的成就。这个题目比较长，用来测试题目区域的滚动效果和布局占比。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间：按钮区域 - 第三部分 -->
+            <div class="button-section" id="debugButtonSection">
+                <div class="button-container">
+                    <button class="start-answer-btn" style="opacity: 0.7;">
+                        <i class="fas fa-microphone"></i>
+                        <span>开始回答</span>
+                    </button>
+                    <button class="end-interview-btn" style="opacity: 0.7;">
+                        <i class="fas fa-stop-circle"></i>
+                        <span>结束面试</span>
+                    </button>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <span class="progress-detail">调试模式</span>
+                        <span class="progress-percent">50%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 50%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下半部分：转写内容区域 - 第四部分 -->
+            <div class="transcription-section" id="debugTranscriptionSection">
+                <div class="section-header">
+                    <h3><i class="fas fa-comments"></i> 回答内容</h3>
+                </div>
+                <div class="transcription-content">
+                    <div class="transcription-container" style="display: flex;">
+                        <div class="transcription-text">
+                            <div class="final-text">
+                                这是回答内容的示例文本。在调试模式下，您可以实时调整题目区域和回答内容区域的占比，查看不同比例下的布局效果。这个区域会自动占据题目区域之外的剩余空间。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const questionPercentSlider = document.getElementById('questionPercent');
+        const questionPercentValue = document.getElementById('questionPercentValue');
+        const questionSection = document.getElementById('debugQuestionSection');
+        const transcriptionSection = document.getElementById('debugTranscriptionSection');
+        const buttonSection = document.getElementById('debugButtonSection');
+        const cssCode = document.getElementById('cssCode');
+        
+        // 更新布局信息
+        function updateLayoutInfo() {
+            const questionRect = questionSection.getBoundingClientRect();
+            const answerRect = transcriptionSection.getBoundingClientRect();
+            const buttonRect = buttonSection.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            
+            const questionHeight = questionRect.height;
+            const answerHeight = answerRect.height;
+            const buttonHeight = buttonRect.height;
+            
+            // 计算比例（排除按钮区域）
+            const availableHeight = viewportHeight - buttonRect.height;
+            const questionRatio = availableHeight > 0 ? ((questionHeight / availableHeight) * 100).toFixed(1) : 0;
+            const answerRatio = availableHeight > 0 ? ((answerHeight / availableHeight) * 100).toFixed(1) : 0;
+            
+            // 更新显示
+            document.getElementById('questionHeight').textContent = `${questionHeight.toFixed(0)}px (${questionRatio}%)`;
+            document.getElementById('answerHeight').textContent = `${answerHeight.toFixed(0)}px (${answerRatio}%)`;
+            document.getElementById('buttonHeight').textContent = `${buttonHeight.toFixed(0)}px`;
+            document.getElementById('viewportHeight').textContent = `${viewportHeight.toFixed(0)}px`;
+            document.getElementById('ratio').textContent = `1:${(answerHeight / questionHeight).toFixed(2)}`;
+            
+            // 更新CSS代码
+            const percent = questionPercentSlider.value;
+            cssCode.value = `/* 题目区域占比 */
+.question-section {
+    flex: 1 1 ${percent}% !important;
+}
+
+/* 回答内容区域（自动占据剩余空间） */
+.transcription-section {
+    flex: 1 1 auto !important;
+}
+
+/* 超小屏幕 */
+@media screen and (max-width: 480px) {
+    .question-section {
+        flex: 1 1 ${percent}% !important;
+    }
+}
+
+/* 横屏模式 */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .question-section {
+        flex: 1 1 ${percent}% !important;
+    }
+}`;
+        }
+        
+        // 滑块变化事件
+        questionPercentSlider.addEventListener('input', function() {
+            const percent = this.value;
+            questionPercentValue.textContent = percent + '%';
+            
+            // 实时更新flex值
+            questionSection.style.setProperty('flex', `1 1 ${percent}%`, 'important');
+            transcriptionSection.style.setProperty('flex', '1 1 auto', 'important');
+            
+            // 延迟更新布局信息（等待布局重新计算）
+            setTimeout(updateLayoutInfo, 50);
+        });
+        
+        // 复制CSS代码
+        function copyCSSCode() {
+            cssCode.select();
+            document.execCommand('copy');
+            alert('CSS代码已复制到剪贴板！\n\n请粘贴到 mobile-interview.css 文件的相应位置。');
+        }
+        
+        // 初始化
+        questionPercentSlider.value = 35;
+        questionPercentValue.textContent = '35%';
+        questionSection.style.setProperty('flex', '1 1 35%', 'important');
+        transcriptionSection.style.setProperty('flex', '1 1 auto', 'important');
+        
+        // 定期更新布局信息
+        setInterval(updateLayoutInfo, 500);
+        
+        // 窗口大小变化时更新
+        window.addEventListener('resize', function() {
+            setTimeout(updateLayoutInfo, 100);
+        });
+        
+        // 页面加载完成后立即更新
+        window.addEventListener('load', function() {
+            setTimeout(updateLayoutInfo, 200);
+        });
+        
+        // DOM加载完成后更新
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(updateLayoutInfo, 200);
+            });
+        } else {
+            setTimeout(updateLayoutInfo, 200);
+        }
+    </script>
+</body>
+</html>
+

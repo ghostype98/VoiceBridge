@@ -1,0 +1,25 @@
+# NATAPP 内网穿透 — 开机自启，在 voicebridge 之后启动
+# 本机已配置：项目路径 /opt/voicebridge，运行用户 voicebridge。
+# 安装: cd /opt/voicebridge && sudo cp deploy/natapp.service /etc/systemd/system/
+#       sudo systemctl daemon-reload && sudo systemctl enable natapp && sudo systemctl start natapp
+
+[Unit]
+Description=NATAPP 内网穿透 - VoiceBridge
+After=network.target voicebridge.service
+# 可选：仅当 voicebridge 已启动后再启 natapp
+Wants=voicebridge.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=voicebridge
+Group=voicebridge
+WorkingDirectory=/opt/voicebridge/tools/natapp
+ExecStart=/bin/bash /opt/voicebridge/tools/natapp/start.sh
+ExecStop=/bin/bash /opt/voicebridge/tools/natapp/stop.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=natapp
+
+[Install]
+WantedBy=multi-user.target

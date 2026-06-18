@@ -1,0 +1,28 @@
+[Unit]
+Description=VoiceBridge - 语音与文字双向转换服务
+After=network.target llm-service.service tts-service.service
+Requires=llm-service.service tts-service.service
+
+[Service]
+Type=simple
+User=gaofei
+Group=gaofei
+WorkingDirectory=/data/gaofei/00-code/VoiceBridge
+ExecStart=/data/gaofei/00-code/VoiceBridge/bash/start_service.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=voicebridge
+
+# 环境变量（如果需要，可以在这里添加）
+# Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+# Environment="PYTHONPATH=/data/gaofei/00-code/VoiceBridge"
+
+# 资源限制（可选）
+# LimitNOFILE=65535
+# LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端调试工具 - VoiceBridge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .debug-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .debug-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+
+        .debug-header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .debug-header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .device-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .device-btn {
+            padding: 12px 24px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .device-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .device-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .preview-container {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f5f5f5;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .preview-container.mobile {
+            max-width: 375px;
+            margin: 0 auto 20px;
+        }
+
+        .preview-container.tablet {
+            max-width: 768px;
+            margin: 0 auto 20px;
+        }
+
+        .preview-container.desktop {
+            width: 100%;
+        }
+
+        .preview-header {
+            background: #667eea;
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .preview-iframe {
+            width: 100%;
+            border: none;
+            display: block;
+            background: white;
+        }
+
+        .preview-iframe.mobile {
+            height: 667px;
+        }
+
+        .preview-iframe.tablet {
+            height: 1024px;
+        }
+
+        .preview-iframe.desktop {
+            height: 800px;
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info-panel h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .info-panel ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-panel li {
+            padding: 8px 0;
+            color: #666;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .info-panel li:last-child {
+            border-bottom: none;
+        }
+
+        .info-panel code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .action-btn.secondary:hover {
+            background: #5a6268;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="debug-header">
+            <h1>📱 移动端调试工具</h1>
+            <p>实时预览和调试移动端页面效果</p>
+            <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <strong>⚠️ 重要提示：</strong>这是<strong>开发调试工具</strong>，不是用户访问的页面！<br>
+                <span style="font-size: 14px; color: #856404;">
+                    用户最终访问的页面是：<code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">/login</code> 或 <code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">/interview</code>
+                </span>
+            </div>
+        </div>
+
+        <div class="device-selector">
+            <button class="device-btn active" data-device="mobile" data-width="375">
+                📱 手机 (375px)
+            </button>
+            <button class="device-btn" data-device="tablet" data-width="768">
+                📱 平板 (768px)
+            </button>
+            <button class="device-btn" data-device="desktop" data-width="100%">
+                💻 桌面 (100%)
+            </button>
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">
+                页面URL:
+            </label>
+            <input type="text" class="url-input" id="pageUrl" 
+                   value="http://recruitment.natapp1.cc/login" 
+                   placeholder="输入要调试的页面URL">
+        </div>
+
+        <div class="preview-container mobile" id="previewContainer">
+            <div class="preview-header">
+                <span id="deviceInfo">📱 手机视图 (375 x 667)</span>
+                <span id="refreshBtn" style="cursor: pointer; padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 4px;">
+                    🔄 刷新
+                </span>
+            </div>
+            <iframe id="previewFrame" 
+                    class="preview-iframe mobile" 
+                    src="http://recruitment.natapp1.cc/login"
+                    allow="microphone; camera">
+            </iframe>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn primary" onclick="openInNewTab()">
+                🔗 在新标签页打开
+            </button>
+            <button class="action-btn secondary" onclick="openInMobile()">
+                📱 在手机浏览器打开
+            </button>
+        </div>
+
+        <div class="info-panel">
+            <h3>💡 使用说明</h3>
+            <ul>
+                <li><strong>设备切换：</strong>点击上方按钮切换不同设备视图</li>
+                <li><strong>URL修改：</strong>修改URL输入框可以预览不同页面</li>
+                <li><strong>实时刷新：</strong>点击刷新按钮重新加载页面</li>
+                <li><strong>浏览器调试：</strong>按 <code>F12</code> 打开开发者工具进行深度调试</li>
+                <li><strong>移动端调试：</strong>使用"在手机浏览器打开"获取二维码，用手机扫描访问</li>
+                <li><strong>响应式测试：</strong>调整浏览器窗口大小测试响应式效果</li>
+            </ul>
+        </div>
+
+        <div class="info-panel" style="margin-top: 20px; background: #d1ecf1; border-left: 4px solid #0c5460;">
+            <h3 style="color: #0c5460;">📌 页面访问说明</h3>
+            <ul>
+                <li><strong>调试工具页面：</strong><code>/mobile-debug</code> - 仅用于开发调试，<span style="color: #dc3545; font-weight: bold;">用户不要访问此页面</span></li>
+                <li><strong>登录页面：</strong><code>/login</code> - <span style="color: #28a745; font-weight: bold;">用户最终访问的登录页面</span></li>
+                <li><strong>面试页面：</strong><code>/interview</code> - <span style="color: #28a745; font-weight: bold;">用户登录后访问的面试页面</span></li>
+                <li><strong>为什么不一样：</strong>调试工具页面是一个包装页面，里面用iframe嵌入实际页面。直接访问实际页面会看到完整的页面效果。</li>
+            </ul>
+        </div>
+
+        <div class="info-panel" style="margin-top: 20px;">
+            <h3>🔧 浏览器开发者工具移动端模拟器</h3>
+            <ul>
+                <li><strong>Chrome/Edge：</strong>按 <code>F12</code> → 点击设备图标（📱）或按 <code>Ctrl+Shift+M</code></li>
+                <li><strong>Firefox：</strong>按 <code>F12</code> → 点击响应式设计模式图标或按 <code>Ctrl+Shift+M</code></li>
+                <li><strong>Safari：</strong>启用开发者菜单 → 开发 → 进入响应式设计模式</li>
+                <li><strong>设备预设：</strong>可以选择 iPhone、iPad、Android 等预设设备</li>
+                <li><strong>自定义尺寸：</strong>可以手动输入宽度和高度</li>
+                <li><strong>网络模拟：</strong>可以模拟慢速网络、离线状态等</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const deviceButtons = document.querySelectorAll('.device-btn');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewFrame = document.getElementById('previewFrame');
+        const deviceInfo = document.getElementById('deviceInfo');
+        const pageUrlInput = document.getElementById('pageUrl');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        // 设备配置
+        const deviceConfigs = {
+            mobile: {
+                width: '375px',
+                height: '667px',
+                class: 'mobile',
+                label: '📱 手机视图 (375 x 667)'
+            },
+            tablet: {
+                width: '768px',
+                height: '1024px',
+                class: 'tablet',
+                label: '📱 平板视图 (768 x 1024)'
+            },
+            desktop: {
+                width: '100%',
+                height: '800px',
+                class: 'desktop',
+                label: '💻 桌面视图 (全屏)'
+            }
+        };
+
+        // 切换设备
+        deviceButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const device = btn.dataset.device;
+                
+                // 更新按钮状态
+                deviceButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // 更新预览容器
+                const config = deviceConfigs[device];
+                previewContainer.className = `preview-container ${config.class}`;
+                previewContainer.style.maxWidth = config.width;
+                
+                // 更新iframe
+                previewFrame.className = `preview-iframe ${config.class}`;
+                previewFrame.style.height = config.height;
+                
+                // 更新设备信息
+                deviceInfo.textContent = config.label;
+            });
+        });
+
+        // 刷新iframe
+        refreshBtn.addEventListener('click', () => {
+            const url = pageUrlInput.value.trim();
+            if (url) {
+                previewFrame.src = url;
+            }
+        });
+
+        // URL输入框回车刷新
+        pageUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const url = pageUrlInput.value.trim();
+                if (url) {
+                    previewFrame.src = url;
+                }
+            }
+        });
+
+        // 在新标签页打开
+        function openInNewTab() {
+            const url = pageUrlInput.value.trim() || previewFrame.src;
+            window.open(url, '_blank');
+        }
+
+        // 在手机浏览器打开（显示二维码）
+        function openInMobile() {
+            const url = pageUrlInput.value.trim() || previewFrame.src;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            `;
+            
+            const content = document.createElement('div');
+            content.style.cssText = `
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                text-align: center;
+                max-width: 400px;
+            `;
+            
+            content.innerHTML = `
+                <h2 style="margin-bottom: 20px; color: #333;">📱 手机访问</h2>
+                <img src="${qrUrl}" alt="二维码" style="max-width: 300px; margin-bottom: 20px;">
+                <p style="margin-bottom: 15px; color: #666;">用手机扫描二维码访问</p>
+                <p style="margin-bottom: 20px; color: #999; font-size: 12px; word-break: break-all;">${url}</p>
+                <button onclick="this.closest('div').parentElement.remove()" 
+                        style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    关闭
+                </button>
+            `;
+            
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

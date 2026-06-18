@@ -1,0 +1,87 @@
+# Python
+temp.sh
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 敏感配置（勿提交真实凭证）
+.env
+.env.local
+.env.*
+!.env.example
+config/config.yaml
+config/credentials.yaml
+tools/natapp/config.ini
+
+# 存储与运行时
+storage/*
+!storage/.gitkeep
+!storage/answer_audio/
+storage/answer_audio/*
+!storage/answer_audio/.gitkeep
+logs/*
+!logs/.gitkeep
+*.log
+voicebridge.pid
+voicebridge_frontend.pid
+
+# 音频与模型
+*.wav
+*.mp3
+*.flac
+*.ogg
+models/
+*.model
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# ASR 测试结果（可能含隐私转写）
+ASR_test/**/asr_result.json
+ASR_test/**/*_four_asr.json
+ASR_test/**/.env
+
+# 备份与 IDE
+*.backup*
+*.bak
+*.tmp
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
+
+# NATAPP 二进制（体积大，自行下载）
+tools/natapp/natapp
+
+# 面试评价备份（含候选人隐私）
+backups/

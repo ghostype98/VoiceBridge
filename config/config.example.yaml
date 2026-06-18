@@ -1,0 +1,110 @@
+# VoiceBridge 配置示例
+# 使用前请复制为 config/config.yaml 并填写真实凭证：
+#   cp config/config.example.yaml config/config.yaml
+#
+# 敏感项也可通过环境变量覆盖（优先级更高）：
+#   ALIYUN_ACCESS_KEY_ID / ALIYUN_ACCESS_KEY_SECRET
+#   DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD
+
+voice_streaming:
+  websocket:
+    host: "0.0.0.0"
+    port: 8003
+    max_connections: 20
+    ping_interval: 30
+    ping_timeout: 10
+  asr:
+    appkey: "your_aliyun_nls_appkey"
+    access_key_id: "your_aliyun_access_key_id"
+    access_key_secret: "your_aliyun_access_key_secret"
+    enable_token_refresh: true
+    token_refresh_interval: 1800
+  audio:
+    sample_rate: 16000
+    channels: 1
+    format: "wav"
+    chunk_size: 1600
+    pcm_upstream:
+      enable_dc_removal: true
+      enable_rms_gate: false
+      rms_gate_threshold: 80
+      enable_edge_micro_smooth: false
+  evaluation:
+    enable_real_time_scoring: true
+    scoring_timeout: 3000
+    min_answer_length: 10
+    llm_scoring:
+      scoring_max_tokens: 2048
+      follow_up_max_tokens: 2048
+      retry_on_truncation: true
+      retry_multiplier: 2
+      retry_max_tokens_cap: 4096
+  streaming_interview:
+    enable_follow_up: true
+    max_follow_ups_per_interview: 1
+    max_follow_ups_per_question: 1
+    session_timeout: 1800
+    asr_switch_ignore_seconds: 0.8
+    enable_voice_next_question_keywords: false
+    min_chars_before_voice_next: 40
+    advance_cooldown_seconds: 5
+    follow_up_tts_prefix: "针对刚才的回答，我想进一步了解一下："
+
+scoring_thresholds:
+  follow_up_score_threshold: 60
+  interview_pass_threshold: 60
+  interview_pass_status_mode: threshold
+
+services:
+  voicebridge:
+    host: "0.0.0.0"
+    port: 8002
+
+server:
+  debug: false
+  host: 0.0.0.0
+  port: 8002
+
+llm:
+  api_base: http://localhost:7000
+  api_key: not-needed
+  max_context_length: 4096
+  max_input_tokens: 4096
+  max_retries: 3
+  max_tokens: 2048
+  model: Qwen2.5-7B
+  provider: local
+  stream: false
+  temperature: 0.2
+  timeout: 60
+  truncation: true
+
+rasa:
+  endpoint: http://localhost:8012
+  model_path: ./models/rasa
+  port: 8012
+  enabled: true
+
+auto_config:
+  enabled: true
+  refresh_interval: 3600
+  cache_ttl: 1800
+  sources:
+    - type: "environment"
+      enabled: true
+      prefix: "ALIYUN_"
+      mappings:
+        ALIYUN_ACCESS_KEY_ID: "voice_streaming.asr.access_key_id"
+        ALIYUN_ACCESS_KEY_SECRET: "voice_streaming.asr.access_key_secret"
+
+interview_ui:
+  show_asr_text: false
+
+logging:
+  level: INFO
+  log_file: ./logs/voicebridge.log
+
+storage:
+  audio_path: ./storage/audio
+  path: ./storage
+  answer_audio_path: ./storage/answer_audio

@@ -1,0 +1,30 @@
+# VoiceBridge 生产环境 systemd 服务单元（示例）
+# 安装前请修改 User/Group、WorkingDirectory、ExecStart 等路径。
+#
+# 安装:
+#   sudo cp deploy/voicebridge.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable voicebridge
+#   sudo systemctl start voicebridge
+
+[Unit]
+Description=VoiceBridge - 语音面试服务
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=voicebridge
+Group=voicebridge
+WorkingDirectory=/opt/voicebridge
+ExecStart=/bin/bash /opt/voicebridge/bash/voicebridge-systemd.sh
+ExecStartPost=-/bin/bash /opt/voicebridge/tools/natapp/start.sh
+ExecStopPost=-/bin/bash /opt/voicebridge/tools/natapp/stop.sh
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=voicebridge
+
+[Install]
+WantedBy=multi-user.target

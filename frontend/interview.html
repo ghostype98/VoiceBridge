@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceBridge 面试系统 - 面试界面</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- 电脑端不加载移动端样式 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="interview-container">
+        <!-- 顶部进度条 -->
+        <div class="interview-progress-bar" style="display: none;">
+            <div class="progress-info">
+                <span class="question-counter">第 1 / 10 题</span>
+                <el-progress
+                    :percentage="10"
+                    :status="'normal'"
+                    :stroke-width="8"
+                />
+            </div>
+            <!-- 面试倒计时 -->
+            <div class="interview-countdown" id="interviewCountdown" style="display: none;">
+                <div class="alert alert-info" style="padding: 10px; border-radius: 5px; background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460;">
+                    <i class="fas fa-clock" style="margin-right: 8px;"></i>
+                    <strong>剩余时间：</strong>
+                    <span id="countdownTimer" class="countdown-text" style="font-weight: bold; font-size: 18px;">03:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 顶部导航栏 -->
+        <header class="interview-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>
+                        <i class="fas fa-microphone-alt"></i>
+                        AI面试系统
+                    </h1>
+                </div>
+                <div class="header-center">
+                    <div class="user-info">
+                        <span id="usernameDisplay">用户名: 未设置</span>
+                        <span id="positionDisplay">面试岗位: 未设置</span>
+                    </div>
+                    <div class="interview-status">
+                        <span id="timeRemaining">剩余时间: 40:00</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <!-- 权限状态指示器 -->
+                    <div class="permission-indicator" id="permissionIndicator" style="display: none;">
+                        <i class="fas fa-microphone" id="permissionIcon"></i>
+                        <span id="permissionText">权限检查中...</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 对话消息区域 -->
+        <main class="chat-container">
+            <!-- 聊天消息区域 -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- 消息将在这里动态添加 -->
+            </div>
+
+            <!-- 转写结果显示 -->
+            <!-- 转写结果显示 -->
+            <div class="transcription-container" id="transcriptionContainer" style="display: none;">
+                <div class="transcription-header">
+                    <h3>回答内容：</h3>
+                </div>
+                <div id="transcriptionTextPanel" class="transcription-text">
+                    <!-- 最终文本（已确认的转写结果） -->
+                    <div id="transcriptText" class="final-text"></div>
+                    <!-- 临时文本（正在识别中，实时显示） -->
+                    <div id="intermediateText" class="intermediate-text"></div>
+                    <!-- 空状态提示 -->
+                    <div id="emptyText" class="empty-text" style="display: none;">等待语音输入...</div>
+                </div>
+                <div id="volumeVisualizerWrap" class="volume-visualizer-wrap" style="display: none;" aria-hidden="true">
+                    <canvas id="volumeVisualizerCanvas" class="volume-visualizer-canvas"></canvas>
+                    <span class="volume-visualizer-label">正在聆听</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- 输入区域 -->
+        <footer class="chat-input-area">
+            <div class="input-container">
+                <!-- 左侧：回答完毕，下一题按钮 -->
+                <div class="input-left">
+                    <button class="start-answer-btn" id="startAnswerBtn" onclick="handleStartAnswerButtonClick()" disabled title="开始回答 / 回答完毕下一题">
+                        <i class="fas fa-microphone"></i>
+                        <span>开始回答</span>
+                    </button>
+                </div>
+
+                <!-- 中间：录音状态显示 -->
+                <div class="input-center">
+                    <div class="recording-display" id="recordingDisplay">
+                        <div class="status-text" id="statusText">录音中</div>
+                        <div class="recording-wave" id="recordingWave" style="display: none;">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：结束面试按钮 -->
+                <div class="input-right">
+                    <button class="end-interview-btn" id="endInterviewBtn" onclick="completeInterview()" disabled title="结束面试">
+                        <i class="fas fa-stop-circle"></i>
+                        <span>结束面试</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 进度条 -->
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span class="progress-detail" id="progressText">准备中...</span>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+
+    <!-- 加载模态框 -->
+    <div id="loadingModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div style="text-align: center; padding: 20px;">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #667eea;"></i>
+                </div>
+                <h3 id="loadingText">处理中...</h3>
+                <p id="loadingDescription">请稍候，正在处理您的请求</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功模态框 -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-circle" style="color: #28a745;"></i> 成功</h3>
+                <span class="close" onclick="hideSuccessModal()">&times;</span>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p id="successMessage">操作成功！</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 错误模态框 -->
+    <div id="errorModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-circle" style="color: #dc3545;"></i> 错误</h3>
+                <span class="close" onclick="hideErrorModal()">&times;</span>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p id="errorMessage">操作失败！</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RecordRTC库，用于音频录制（参考旧代码） -->
+    <script src="https://cdn.jsdelivr.net/npm/recordrtc@5.6.2/RecordRTC.min.js"></script>
+    
+    <!-- opus-media-recorder库，用于音频容器头补全 -->
+    <script>
+        // 尝试加载OpusMediaRecorder，如果失败则使用原生MediaRecorder
+        (function() {
+            var opusLoaded = false;
+            var workerLoaded = false;
+
+            function loadScript(src, callback, errorCallback) {
+                var script = document.createElement('script');
+                script.src = src;
+                script.onload = function() {
+                    console.log('✅ 库加载成功:', src);
+                    callback();
+                };
+                script.onerror = function() {
+                    console.warn('⚠️ 库加载失败:', src);
+                    if (errorCallback) errorCallback();
+                };
+                document.head.appendChild(script);
+            }
+
+            function checkOpusAvailability() {
+                if (typeof OpusMediaRecorder !== 'undefined') {
+                    console.log('✅ OpusMediaRecorder库可用，优先使用高质量录音');
+                    window.OpusMediaRecorderAvailable = true;
+                } else {
+                    console.warn('⚠️ OpusMediaRecorder库不可用，使用原生MediaRecorder');
+                    window.OpusMediaRecorderAvailable = false;
+                }
+            }
+
+            // 尝试加载主库
+            loadScript('/static/js/libs/OpusMediaRecorder.umd.js', function() {
+                opusLoaded = true;
+                console.log('✅ OpusMediaRecorder主库加载成功');
+
+                // 尝试加载Worker库
+                loadScript('/static/js/libs/encoderWorker.umd.js', function() {
+                    workerLoaded = true;
+                    console.log('✅ OpusMediaRecorder Worker库加载成功');
+                    // 注意：这里不检查OpusMediaRecorder可用性，因为还需要WASM文件
+                    console.log('ℹ️ OpusMediaRecorder库已加载，但可能需要WASM文件');
+                }, function() {
+                    console.warn('⚠️ Worker库加载失败，OpusMediaRecorder将不可用');
+                    window.OpusMediaRecorderAvailable = false;
+                });
+            }, function() {
+                console.error('❌ OpusMediaRecorder主库加载失败，使用原生MediaRecorder');
+                window.OpusMediaRecorderAvailable = false;
+            });
+
+            // 5秒后检查最终状态
+            setTimeout(function() {
+                if (window.OpusMediaRecorderAvailable !== true) {
+                    console.log('ℹ️ 系统将使用原生MediaRecorder进行录音');
+                    window.OpusMediaRecorderAvailable = false;
+                }
+            }, 5000);
+        })();
+    </script>
+
+    <script>
+        // 动态加载JavaScript文件，确保加载成功
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                // 检查脚本是否已经加载
+                const existingScript = document.querySelector(`script[src^="${src}"]`);
+                if (existingScript) {
+                    console.log('ℹ️ 脚本已存在:', src);
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                // 添加时间戳强制刷新缓存
+                const timestamp = Date.now();
+                script.src = src + (src.includes('?') ? '&' : '?') + 't=' + timestamp;
+                script.async = false; // 确保按顺序加载
+                
+                script.onload = () => {
+                    console.log('✅ 成功加载:', src);
+                    resolve();
+                };
+                
+                script.onerror = (error) => {
+                    console.error('❌ 加载失败:', src, error);
+                    // 尝试使用绝对路径
+                    const absoluteSrc = window.location.origin + src;
+                    console.log('🔄 尝试使用绝对路径:', absoluteSrc);
+                    
+                    const retryScript = document.createElement('script');
+                    retryScript.src = absoluteSrc;
+                    retryScript.async = false;
+                    retryScript.onload = () => {
+                        console.log('✅ 使用绝对路径加载成功:', absoluteSrc);
+                        resolve();
+                    };
+                    retryScript.onerror = () => {
+                        console.error('❌ 绝对路径也加载失败:', absoluteSrc);
+                        reject(new Error(`无法加载脚本: ${src}`));
+                    };
+                    document.head.appendChild(retryScript);
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+
+        // 按顺序加载所有必需的JavaScript文件
+        (async function() {
+            try {
+                console.log('📦 开始加载JavaScript文件...');
+                
+                // 加载api.js
+                await loadScript('/static/js/api.js');
+                
+                // 等待API对象可用
+                if (typeof window.API === 'undefined') {
+                    throw new Error('API对象未定义，api.js可能未正确加载');
+                }
+                console.log('✅ API对象已可用');
+                
+                // 加载新的音频系统文件
+                // audio-processor.js 只在 AudioWorklet 上下文中加载，不在全局加载
+                // await loadScript('/static/js/audio-processor.js'); // 移除全局加载
+                await loadScript('/static/js/audio-manager.js');
+                await loadScript('/static/js/websocket-asr.js');
+                
+                // 加载interview.js
+                await loadScript('/static/js/interview.js');
+                
+                // 等待InterviewManager类可用
+                if (typeof InterviewManager === 'undefined') {
+                    throw new Error('InterviewManager类未定义，interview.js可能未正确加载');
+                }
+                console.log('✅ InterviewManager类已可用');
+                
+                // 等待全局函数可用
+                if (typeof window.startInterview === 'undefined') {
+                    throw new Error('window.startInterview函数未定义');
+                }
+                console.log('✅ window.startInterview函数已可用');
+                
+                console.log('🎉 所有JavaScript文件加载完成');
+                
+                // 触发自定义事件，通知其他脚本JavaScript已加载完成
+                window.dispatchEvent(new CustomEvent('jsFilesLoaded'));
+            } catch (error) {
+                console.error('❌ JavaScript文件加载失败:', error);
+                alert('系统初始化失败：' + error.message + '\n\n请刷新页面重试，或联系管理员。');
+                // 即使加载失败，也触发事件，让其他代码知道状态
+                window.dispatchEvent(new CustomEvent('jsFilesLoadFailed', { detail: error }));
+            }
+        })();
+    </script>
+
+    <script>
+        // 页面加载时检查登录状态
+        async function checkLoginStatus() {
+            console.log('🔐 [START] checkLoginStatus函数开始执行');
+
+            try {
+                // 检查本地存储中的登录状态
+                const isLoggedIn = localStorage.getItem('isLoggedIn');
+                const invitationData = localStorage.getItem('invitationData');
+                const userData = localStorage.getItem('userData');
+
+                console.log('本地登录状态:', isLoggedIn);
+                console.log('邀请数据:', invitationData);
+                console.log('用户数据:', userData);
+
+                if (!isLoggedIn || isLoggedIn !== 'true' || !invitationData) {
+                    console.log('❌ 未登录或缺少登录信息，重定向到登录页面');
+                    window.location.href = '/login';
+                    return false;
+                }
+
+                // 解析邀请数据
+                let parsedInvitation;
+                try {
+                    parsedInvitation = JSON.parse(invitationData);
+                    console.log('解析后的邀请数据:', parsedInvitation);
+                } catch (parseError) {
+                    console.error('❌ 邀请数据解析失败:', parseError);
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('invitationData');
+                    localStorage.removeItem('userData');
+                    window.location.href = '/login';
+                    return false;
+                }
+
+                const invitationId = parsedInvitation.invitation_id;
+                console.log('使用的邀请ID:', invitationId);
+
+                // 调用后端API验证会话
+                console.log('🔍 验证会话有效性...');
+                const sessionCheck = await window.API.auth.checkSession(invitationId);
+
+                console.log('会话检查响应:', sessionCheck);
+
+                if (sessionCheck && sessionCheck.valid === true) {
+                    console.log('✅ 会话验证成功');
+                    return true;
+                } else {
+                    console.log('❌ 会话验证失败:', sessionCheck?.message || '未知错误');
+                    // 清除本地登录状态
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('invitationData');
+                    localStorage.removeItem('userData');
+                    // 重定向到登录页面
+                    window.location.href = '/login';
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ 检查登录状态时出错:', error);
+                // 发生错误时也重定向到登录页面
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('invitationData');
+                localStorage.removeItem('userData');
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        console.log('🔐 [END] checkLoginStatus函数执行完毕');
+
+        // 页面卸载时清理会话（避免面试未开始就调用 complete 导致 404 与错误 session_id）
+        async function cleanupSession() {
+            console.log('🧹 页面卸载，清理会话状态...');
+
+            // 仅当本页已成功开始面试且存在当前会话时，才调用 complete（避免残留旧 session_id 或未 start 就 complete）
+            var shouldComplete = window.__interviewStartedInThisPage === true &&
+                window.interviewManager && window.interviewManager.currentSession &&
+                window.interviewManager.currentSession.session_id;
+            if (shouldComplete) {
+                try {
+                    var sessionId = window.interviewManager.currentSession.session_id;
+                    console.log('🔄 正在完成面试会话:', sessionId);
+                    await window.API.session.completeSession(sessionId);
+                    console.log('✅ 面试会话已完成');
+                } catch (error) {
+                    console.error('❌ 完成面试会话时出错:', error);
+                }
+                try { window.__interviewStartedInThisPage = false; } catch (e) {}
+            }
+
+            // 清除面试相关的全局状态
+            if (window.interviewManager) {
+                try {
+                    // 如果正在录音，停止录音
+                    if (window.interviewManager.mediaRecorder &&
+                        window.interviewManager.mediaRecorder.state === 'recording') {
+                        window.interviewManager.mediaRecorder.stop();
+                    }
+
+                    // 停止实时转录
+                    if (window.interviewManager.transcriptionInterval) {
+                        clearInterval(window.interviewManager.transcriptionInterval);
+                        window.interviewManager.transcriptionInterval = null;
+                    }
+
+                    // 停止静默检测
+                    if (window.interviewManager.silenceTimeout) {
+                        clearInterval(window.interviewManager.silenceTimeout);
+                        window.interviewManager.silenceTimeout = null;
+                    }
+
+                    // 停止音量检测
+                    if (window.interviewManager.volumeCheckInterval) {
+                        clearInterval(window.interviewManager.volumeCheckInterval);
+                        window.interviewManager.volumeCheckInterval = null;
+                    }
+
+                    console.log('✅ 前端面试状态已清理');
+                } catch (error) {
+                    console.error('❌ 清理面试状态时出错:', error);
+                }
+            }
+
+            // 清除媒体流
+            if (window.interviewManager && window.interviewManager.stream) {
+                try {
+                    window.interviewManager.stream.getTracks().forEach(track => track.stop());
+                    window.interviewManager.stream = null;
+                    console.log('✅ 媒体流已停止');
+                } catch (error) {
+                    console.error('❌ 停止媒体流时出错:', error);
+                }
+            }
+
+            // 注意：不清除localStorage中的登录状态，让用户保持登录
+            // 只有在会话验证失败时才会清除
+        }
+
+        // 等待JavaScript文件加载完成后再检查系统状态
+        function initSystem() {
+            console.log('🔍 检查系统状态...');
+
+            // 检查localStorage状态
+            console.log('=== localStorage状态检查 ===');
+            console.log('邀请数据:', localStorage.getItem('invitationData'));
+            console.log('登录状态:', localStorage.getItem('isLoggedIn'));
+            console.log('用户数据:', localStorage.getItem('userData'));
+
+            // 检查登录状态（异步）
+            checkLoginStatus().then(async (isLoggedIn) => {
+                if (!isLoggedIn) {
+                    return; // 如果未登录，已重定向，不继续执行
+                }
+
+                // 继续执行系统检查
+                await performSystemCheck();
+            }).catch(error => {
+                console.error('登录状态检查失败:', error);
+            });
+        }
+
+        // 执行系统检查
+        async function performSystemCheck() {
+
+            // 检查OpusMediaRecorder库
+            if (typeof OpusMediaRecorder !== 'undefined') {
+                console.log('✅ OpusMediaRecorder库已成功加载');
+            } else {
+                console.warn('⚠️ OpusMediaRecorder库加载失败，将使用原生MediaRecorder');
+            }
+
+            // 检查全局函数
+            if (typeof window.startInterview === 'function') {
+                console.log('✅ window.startInterview函数可用');
+            } else {
+                console.error('❌ window.startInterview函数不可用');
+            }
+
+            if (typeof startInterview === 'function') {
+                console.log('✅ startInterview全局函数可用');
+            } else {
+                console.error('❌ startInterview全局函数不可用');
+            }
+
+            console.log('🏁 系统状态检查完成');
+            console.log('🎯 自动开始面试由 InterviewManager.initializePage() 处理');
+        }
+
+        // 监听JavaScript文件加载完成事件
+        window.addEventListener('jsFilesLoaded', function() {
+            console.log('📦 JavaScript文件已加载完成，开始初始化系统...');
+            initSystem();
+        });
+
+        // 如果JavaScript文件加载失败，也尝试初始化（可能文件已经通过其他方式加载）
+        window.addEventListener('jsFilesLoadFailed', function(event) {
+            console.warn('⚠️ JavaScript文件加载失败，但继续尝试初始化...');
+            // 等待一段时间后尝试初始化，可能文件已经加载了
+            setTimeout(() => {
+                if (typeof window.API !== 'undefined' && typeof InterviewManager !== 'undefined') {
+                    console.log('✅ 检测到JavaScript已可用，继续初始化');
+                    initSystem();
+                } else {
+                    console.error('❌ JavaScript仍然不可用');
+                }
+            }, 1000);
+        });
+
+        // 页面加载完成后，如果JavaScript文件已经加载完成，立即初始化
+        window.addEventListener('load', function() {
+            // 检查JavaScript是否已经加载
+            if (typeof window.API !== 'undefined' && typeof InterviewManager !== 'undefined') {
+                console.log('✅ 页面加载时JavaScript已可用，立即初始化');
+                initSystem();
+            } else {
+                console.log('⏳ 等待JavaScript文件加载...');
+            }
+        });
+
+        // 在DOM加载完成后立即检查
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM内容加载完成');
+
+            // 额外检查JavaScript加载状态
+            setTimeout(function() {
+                console.log('⏰ 延迟检查JavaScript状态...');
+
+                if (typeof InterviewManager === 'function') {
+                    console.log('✅ InterviewManager类可用');
+                } else {
+                    console.error('❌ InterviewManager类不可用');
+                }
+
+                if (window.interviewManager) {
+                    console.log('✅ interviewManager实例可用');
+                } else {
+                    console.error('❌ interviewManager实例不可用');
+                }
+
+                if (typeof window.startInterview === 'function') {
+                    console.log('✅ window.startInterview函数可用');
+                } else {
+                    console.error('❌ window.startInterview函数不可用');
+                }
+
+                if (typeof startInterview === 'function') {
+                    console.log('✅ startInterview全局函数可用');
+                } else {
+                    console.error('❌ startInterview全局函数不可用');
+                }
+
+                console.log('🏁 JavaScript状态检查完成');
+            }, 1000);
+        });
+
+        // 页面卸载时清理资源 - 使用多种机制确保可靠性
+        window.addEventListener('beforeunload', function(event) {
+            console.log('🚪 检测到页面关闭/刷新事件');
+            // 使用同步方式执行清理，避免异步操作被中断
+            try {
+                // 同步清理关键资源
+                if (window.interviewManager) {
+                    // 停止录音
+                    if (window.interviewManager.mediaRecorder &&
+                        window.interviewManager.mediaRecorder.state === 'recording') {
+                        window.interviewManager.mediaRecorder.stop();
+                    }
+
+                    // 停止所有定时器
+                    if (window.interviewManager.transcriptionInterval) {
+                        clearInterval(window.interviewManager.transcriptionInterval);
+                        window.interviewManager.transcriptionInterval = null;
+                    }
+
+                    if (window.interviewManager.silenceTimeout) {
+                        clearInterval(window.interviewManager.silenceTimeout);
+                        window.interviewManager.silenceTimeout = null;
+                    }
+
+                    if (window.interviewManager.volumeCheckInterval) {
+                        clearInterval(window.interviewManager.volumeCheckInterval);
+                        window.interviewManager.volumeCheckInterval = null;
+                    }
+
+                    // 停止媒体流
+                    if (window.interviewManager.stream) {
+                        window.interviewManager.stream.getTracks().forEach(track => {
+                            try { track.stop(); } catch (e) {}
+                        });
+                        window.interviewManager.stream = null;
+                    }
+                }
+
+                // 异步完成会话（不等待结果，因为页面即将关闭）
+                if (window.interviewManager && window.interviewManager.currentSession) {
+                    const sessionId = window.interviewManager.currentSession.session_id;
+                    // 使用sendBeacon发送异步请求，确保在页面关闭后还能发送
+                    if (navigator.sendBeacon) {
+                        const data = JSON.stringify({ session_id: sessionId });
+                        navigator.sendBeacon('/api/v1/interview-sessions/' + sessionId + '/complete', data);
+                        console.log('📤 已发送会话完成请求');
+                    }
+                }
+
+                console.log('✅ 页面卸载清理完成');
+            } catch (error) {
+                console.error('❌ 页面卸载清理出错:', error);
+            }
+        });
+
+        // 页面可见性变化（用户切换标签页/最小化）仅做调试用，减少日志噪音
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (typeof console !== 'undefined' && console.debug) console.debug('👁️ 页面不可见');
+            } else {
+                if (typeof console !== 'undefined' && console.debug) console.debug('👁️ 页面可见');
+            }
+        });
+
+        // 添加页面隐藏时的额外清理（针对移动设备）
+        document.addEventListener('pagehide', function(event) {
+            console.log('📱 页面隐藏事件');
+            // 页面隐藏时也执行清理
+            try {
+                if (window.interviewManager && window.interviewManager.currentSession && navigator.sendBeacon) {
+                    const sessionId = window.interviewManager.currentSession.session_id;
+                    const data = JSON.stringify({ session_id: sessionId });
+                    navigator.sendBeacon('/api/v1/interview-sessions/' + sessionId + '/complete', data);
+                    console.log('📤 页面隐藏时发送会话完成请求');
+                }
+            } catch (error) {
+                console.error('❌ 页面隐藏清理出错:', error);
+            }
+        });
+    </script>
+
+    <!-- 页面加载调试信息 -->
+    <script>
+        console.log('🎨 VoiceBridge 面试界面优化更新');
+        console.log('🎨 视觉改进：');
+        console.log('  ├── 整体颜色: 背景透明度降低为0.1，更浅更优雅');
+        console.log('  ├── AI头像: 添加机器人图标 🤖');
+        console.log('  ├── 按钮文字: startAnswerBtn和endInterviewBtn文字完美居中');
+        console.log('🎯 用户体验：更舒适的视觉效果，更清晰的界面元素');
+    </script>
+</body>
+</html>

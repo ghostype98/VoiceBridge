@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VoiceBridge 面试系统 - 移动端</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <!-- 移动端不加载电脑端样式，避免样式冲突 -->
+    <link rel="stylesheet" href="/static/css/mobile-interview.css?v=1.0.9">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="mobile-interview-container">
+        <!-- 顶部进度条 -->
+        <div class="interview-progress-bar" style="display: none;">
+            <div class="progress-info">
+                <span class="question-counter">第 1 / 10 题</span>
+                <el-progress
+                    :percentage="10"
+                    :status="'normal'"
+                    :stroke-width="8"
+                />
+            </div>
+            <!-- 面试倒计时 -->
+            <div class="interview-countdown" id="interviewCountdown" style="display: none;">
+                <div class="alert alert-info" style="padding: 10px; border-radius: 5px; background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460;">
+                    <i class="fas fa-clock" style="margin-right: 8px;"></i>
+                    <strong>剩余时间：</strong>
+                    <span id="countdownTimer" class="countdown-text" style="font-weight: bold; font-size: 18px;">03:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 顶部导航栏 -->
+        <header class="interview-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>
+                        <i class="fas fa-microphone-alt"></i>
+                        AI面试系统
+                    </h1>
+                    <div class="interview-status">
+                        <span id="timeRemaining">剩余时间: 40:00</span>
+                    </div>
+                </div>
+                <div class="header-center">
+                    <div class="user-info">
+                        <span id="usernameDisplay">用户名: 未设置</span>
+                        <span id="positionDisplay">面试岗位: 未设置</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <!-- 权限状态指示器 -->
+                    <div class="permission-indicator" id="permissionIndicator" style="display: none;">
+                        <i class="fas fa-microphone" id="permissionIcon"></i>
+                        <span id="permissionText">权限检查中...</span>
+                    </div>
+                    <!-- 退出按钮 -->
+                    <button class="logout-btn" onclick="logout()" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 移动端分屏布局 -->
+        <div class="mobile-split-layout">
+            <!-- 上半部分：题目区域（固定高度，可滚动） -->
+            <div class="question-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-question-circle"></i> 当前题目</h3>
+                </div>
+                <div class="question-content" id="questionContent">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- 消息将在这里动态添加 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间：按钮区域（固定） -->
+            <div class="button-section">
+                <div class="button-container">
+                    <button class="start-answer-btn" id="startAnswerBtn" onclick="handleStartAnswerButtonClick()" disabled title="开始回答 / 回答完毕下一题">
+                        <i class="fas fa-microphone"></i>
+                        <span>开始回答</span>
+                    </button>
+                    <button class="end-interview-btn" id="endInterviewBtn" onclick="completeInterview()" disabled title="结束面试">
+                        <i class="fas fa-stop-circle"></i>
+                        <span>结束面试</span>
+                    </button>
+                </div>
+                <!-- 录音状态显示 -->
+                <div class="recording-display" id="recordingDisplay" style="display: none;">
+                    <div class="status-text" id="statusText">录音中</div>
+                    <div class="recording-wave" id="recordingWave" style="display: none;">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                </div>
+                <!-- 进度条 -->
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <span class="progress-detail" id="progressText">准备中...</span>
+                        <span class="progress-percent" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下半部分：转写内容区域（固定高度，可滚动） -->
+            <div class="transcription-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-comments"></i> 回答内容</h3>
+                    <!-- 自动跳转提示 -->
+                    <div class="auto-advance-tip" id="autoAdvanceTip">
+                        <i class="fas fa-info-circle"></i>
+                        <span>说"下一题"和"说完了"可自动跳转下一题</span>
+                    </div>
+                </div>
+                <div class="transcription-content" id="transcriptionContent">
+                    <!-- 转写容器，用于兼容JavaScript代码 -->
+                    <div class="transcription-container" id="transcriptionContainer" style="display: none;">
+                        <div class="transcription-text" id="transcriptionText">
+                            <div id="transcriptionTextPanel" class="transcription-text-panel">
+                            <!-- 最终文本（已确认的转写结果） -->
+                            <div id="transcriptText" class="final-text"></div>
+                            <!-- 临时文本（正在识别中，实时显示） -->
+                            <div id="intermediateText" class="intermediate-text"></div>
+                            <!-- 空状态提示 -->
+                            <div id="emptyText" class="empty-text" style="display: none;">等待语音输入...</div>
+                            </div>
+                            <div id="volumeVisualizerWrap" class="volume-visualizer-wrap" style="display: none;" aria-hidden="true">
+                                <canvas id="volumeVisualizerCanvas" class="volume-visualizer-canvas"></canvas>
+                                <span class="volume-visualizer-label">正在聆听</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载模态框 -->
+    <div id="loadingModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div style="text-align: center; padding: 20px;">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #667eea;"></i>
+                </div>
+                <h3 id="loadingText">处理中...</h3>
+                <p id="loadingDescription">请稍候，正在处理您的请求</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功模态框 -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-circle" style="color: #28a745;"></i> 成功</h3>
+                <span class="close" onclick="hideSuccessModal()">&times;</span>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p id="successMessage">操作成功！</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 错误模态框 -->
+    <div id="errorModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-circle" style="color: #dc3545;"></i> 错误</h3>
+                <span class="close" onclick="hideErrorModal()">&times;</span>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p id="errorMessage">操作失败！</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 调试日志面板 -->
+    <div id="debugPanel" class="debug-panel" style="display: none;">
+        <div class="debug-panel-header">
+            <h3><i class="fas fa-bug"></i> 调试日志</h3>
+            <div class="debug-panel-controls">
+                <button class="debug-btn-small" onclick="clearDebugLogs()" title="清空日志">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="debug-btn-small" onclick="toggleDebugPanel()" title="关闭">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="debug-panel-content" id="debugLogs">
+            <div class="debug-log-entry">调试日志已启动...</div>
+        </div>
+    </div>
+
+    <!-- RecordRTC库，用于音频录制 -->
+    <script src="https://cdn.jsdelivr.net/npm/recordrtc@5.6.2/RecordRTC.min.js"></script>
+    
+    <!-- opus-media-recorder库，用于音频容器头补全 -->
+    <script>
+        (function() {
+            var opusLoaded = false;
+            var workerLoaded = false;
+
+            function loadScript(src, callback, errorCallback) {
+                var script = document.createElement('script');
+                script.src = src;
+                script.onload = function() {
+                    console.log('✅ 库加载成功:', src);
+                    callback();
+                };
+                script.onerror = function() {
+                    console.warn('⚠️ 库加载失败:', src);
+                    if (errorCallback) errorCallback();
+                };
+                document.head.appendChild(script);
+            }
+
+            function checkOpusAvailability() {
+                if (typeof OpusMediaRecorder !== 'undefined') {
+                    console.log('✅ OpusMediaRecorder库可用，优先使用高质量录音');
+                    window.OpusMediaRecorderAvailable = true;
+                } else {
+                    console.warn('⚠️ OpusMediaRecorder库不可用，使用原生MediaRecorder');
+                    window.OpusMediaRecorderAvailable = false;
+                }
+            }
+
+            loadScript('/static/js/libs/OpusMediaRecorder.umd.js', function() {
+                opusLoaded = true;
+                console.log('✅ OpusMediaRecorder主库加载成功');
+                loadScript('/static/js/libs/encoderWorker.umd.js', function() {
+                    workerLoaded = true;
+                    console.log('✅ OpusMediaRecorder Worker库加载成功');
+                }, function() {
+                    console.warn('⚠️ Worker库加载失败，OpusMediaRecorder将不可用');
+                    window.OpusMediaRecorderAvailable = false;
+                });
+            }, function() {
+                console.error('❌ OpusMediaRecorder主库加载失败，使用原生MediaRecorder');
+                window.OpusMediaRecorderAvailable = false;
+            });
+
+            setTimeout(function() {
+                if (window.OpusMediaRecorderAvailable !== true) {
+                    console.log('ℹ️ 系统将使用原生MediaRecorder进行录音');
+                    window.OpusMediaRecorderAvailable = false;
+                }
+            }, 5000);
+        })();
+    </script>
+
+    <script>
+        // 动态加载JavaScript文件
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const existingScript = document.querySelector(`script[src^="${src}"]`);
+                if (existingScript) {
+                    console.log('ℹ️ 脚本已存在:', src);
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                const timestamp = Date.now();
+                script.src = src + (src.includes('?') ? '&' : '?') + 't=' + timestamp;
+                script.async = false;
+                
+                script.onload = () => {
+                    console.log('✅ 成功加载:', src);
+                    resolve();
+                };
+                
+                script.onerror = (error) => {
+                    console.error('❌ 加载失败:', src, error);
+                    const absoluteSrc = window.location.origin + src;
+                    console.log('🔄 尝试使用绝对路径:', absoluteSrc);
+                    
+                    const retryScript = document.createElement('script');
+                    retryScript.src = absoluteSrc;
+                    retryScript.async = false;
+                    retryScript.onload = () => {
+                        console.log('✅ 使用绝对路径加载成功:', absoluteSrc);
+                        resolve();
+                    };
+                    retryScript.onerror = () => {
+                        console.error('❌ 绝对路径也加载失败:', absoluteSrc);
+                        reject(new Error(`无法加载脚本: ${src}`));
+                    };
+                    document.head.appendChild(retryScript);
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+
+        // 按顺序加载所有必需的JavaScript文件
+        (async function() {
+            try {
+                console.log('📦 开始加载JavaScript文件...');
+                
+                await loadScript('/static/js/api.js');
+                
+                if (typeof window.API === 'undefined') {
+                    throw new Error('API对象未定义，api.js可能未正确加载');
+                }
+                console.log('✅ API对象已可用');
+                
+                await loadScript('/static/js/audio-manager.js');
+                await loadScript('/static/js/websocket-asr.js');
+                await loadScript('/static/js/interview.js');
+                
+                if (typeof InterviewManager === 'undefined') {
+                    throw new Error('InterviewManager类未定义，interview.js可能未正确加载');
+                }
+                console.log('✅ InterviewManager类已可用');
+                
+                if (typeof window.startInterview === 'undefined') {
+                    throw new Error('window.startInterview函数未定义');
+                }
+                console.log('✅ window.startInterview函数已可用');
+                
+                console.log('🎉 所有JavaScript文件加载完成');
+                
+                window.dispatchEvent(new CustomEvent('jsFilesLoaded'));
+            } catch (error) {
+                console.error('❌ JavaScript文件加载失败:', error);
+                alert('系统初始化失败：' + error.message + '\n\n请刷新页面重试，或联系管理员。');
+                window.dispatchEvent(new CustomEvent('jsFilesLoadFailed', { detail: error }));
+            }
+        })();
+    </script>
+
+    <script>
+        // 页面加载时检查登录状态
+        async function checkLoginStatus() {
+            console.log('🔐 [START] checkLoginStatus函数开始执行 - 移动端模式');
+
+            try {
+                // 标记这是移动端页面，供登录页面识别
+                sessionStorage.setItem('deviceType', 'mobile');
+                
+                const isLoggedIn = localStorage.getItem('isLoggedIn');
+                const invitationData = localStorage.getItem('invitationData');
+                const userData = localStorage.getItem('userData');
+
+                console.log('本地登录状态:', isLoggedIn);
+                console.log('邀请数据:', invitationData);
+                console.log('用户数据:', userData);
+
+                if (!isLoggedIn || isLoggedIn !== 'true' || !invitationData) {
+                    console.log('❌ 未登录或缺少登录信息，重定向到登录页面（带移动端标记）');
+                    // 跳转到登录页面，并添加mobile参数
+                    window.location.href = '/login?mobile=true';
+                    return false;
+                }
+
+                let parsedInvitation;
+                try {
+                    parsedInvitation = JSON.parse(invitationData);
+                    console.log('解析后的邀请数据:', parsedInvitation);
+                } catch (parseError) {
+                    console.error('❌ 邀请数据解析失败:', parseError);
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('invitationData');
+                    localStorage.removeItem('userData');
+                    // 跳转到登录页面，并添加mobile参数
+                    window.location.href = '/login?mobile=true';
+                    return false;
+                }
+
+                const invitationId = parsedInvitation.invitation_id;
+                console.log('使用的邀请ID:', invitationId);
+
+                console.log('🔍 验证会话有效性...');
+                const sessionCheck = await window.API.auth.checkSession(invitationId);
+
+                console.log('会话检查响应:', sessionCheck);
+
+                if (sessionCheck && sessionCheck.valid === true) {
+                    console.log('✅ 会话验证成功');
+                    return true;
+                } else {
+                    console.log('❌ 会话验证失败:', sessionCheck?.message || '未知错误');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('invitationData');
+                    localStorage.removeItem('userData');
+                    // 跳转到登录页面，并添加mobile参数
+                    window.location.href = '/login?mobile=true';
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ 检查登录状态时出错:', error);
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('invitationData');
+                localStorage.removeItem('userData');
+                // 跳转到登录页面，并添加mobile参数
+                window.location.href = '/login?mobile=true';
+                return false;
+            }
+        }
+
+        console.log('🔐 [END] checkLoginStatus函数执行完毕');
+
+        // 页面卸载时清理会话
+        async function cleanupSession() {
+            console.log('🧹 页面卸载，清理会话状态...');
+
+            var shouldComplete = window.__interviewStartedInThisPage === true &&
+                window.interviewManager && window.interviewManager.currentSession &&
+                window.interviewManager.currentSession.session_id;
+            if (shouldComplete) {
+                try {
+                    var sessionId = window.interviewManager.currentSession.session_id;
+                    console.log('🔄 正在完成面试会话:', sessionId);
+                    await window.API.session.completeSession(sessionId);
+                    console.log('✅ 面试会话已完成');
+                } catch (error) {
+                    console.error('❌ 完成面试会话时出错:', error);
+                }
+                try { window.__interviewStartedInThisPage = false; } catch (e) {}
+            }
+
+            if (window.interviewManager) {
+                try {
+                    if (window.interviewManager.mediaRecorder &&
+                        window.interviewManager.mediaRecorder.state === 'recording') {
+                        window.interviewManager.mediaRecorder.stop();
+                    }
+
+                    if (window.interviewManager.transcriptionInterval) {
+                        clearInterval(window.interviewManager.transcriptionInterval);
+                        window.interviewManager.transcriptionInterval = null;
+                    }
+
+                    if (window.interviewManager.silenceTimeout) {
+                        clearInterval(window.interviewManager.silenceTimeout);
+                        window.interviewManager.silenceTimeout = null;
+                    }
+
+                    if (window.interviewManager.volumeCheckInterval) {
+                        clearInterval(window.interviewManager.volumeCheckInterval);
+                        window.interviewManager.volumeCheckInterval = null;
+                    }
+
+                    console.log('✅ 前端面试状态已清理');
+                } catch (error) {
+                    console.error('❌ 清理面试状态时出错:', error);
+                }
+            }
+
+            if (window.interviewManager && window.interviewManager.stream) {
+                try {
+                    window.interviewManager.stream.getTracks().forEach(track => track.stop());
+                    window.interviewManager.stream = null;
+                    console.log('✅ 媒体流已停止');
+                } catch (error) {
+                    console.error('❌ 停止媒体流时出错:', error);
+                }
+            }
+        }
+
+        // 等待JavaScript文件加载完成后再检查系统状态
+        function initSystem() {
+            console.log('🔍 检查系统状态...');
+
+            console.log('=== localStorage状态检查 ===');
+            console.log('邀请数据:', localStorage.getItem('invitationData'));
+            console.log('登录状态:', localStorage.getItem('isLoggedIn'));
+            console.log('用户数据:', localStorage.getItem('userData'));
+
+            checkLoginStatus().then(async (isLoggedIn) => {
+                if (!isLoggedIn) {
+                    return;
+                }
+
+                await performSystemCheck();
+            }).catch(error => {
+                console.error('登录状态检查失败:', error);
+            });
+        }
+
+        // 执行系统检查
+        async function performSystemCheck() {
+            if (typeof OpusMediaRecorder !== 'undefined') {
+                console.log('✅ OpusMediaRecorder库已成功加载');
+            } else {
+                console.warn('⚠️ OpusMediaRecorder库加载失败，将使用原生MediaRecorder');
+            }
+
+            if (typeof window.startInterview === 'function') {
+                console.log('✅ window.startInterview函数可用');
+            } else {
+                console.error('❌ window.startInterview函数不可用');
+            }
+
+            if (typeof startInterview === 'function') {
+                console.log('✅ startInterview全局函数可用');
+            } else {
+                console.error('❌ startInterview全局函数不可用');
+            }
+
+            console.log('🏁 系统状态检查完成');
+            console.log('🎯 自动开始面试由 InterviewManager.initializePage() 处理');
+        }
+
+        // 监听JavaScript文件加载完成事件
+        window.addEventListener('jsFilesLoaded', function() {
+            console.log('📦 JavaScript文件已加载完成，开始初始化系统...');
+            initSystem();
+        });
+
+        window.addEventListener('jsFilesLoadFailed', function(event) {
+            console.warn('⚠️ JavaScript文件加载失败，但继续尝试初始化...');
+            setTimeout(() => {
+                if (typeof window.API !== 'undefined' && typeof InterviewManager !== 'undefined') {
+                    console.log('✅ 检测到JavaScript已可用，继续初始化');
+                    initSystem();
+                } else {
+                    console.error('❌ JavaScript仍然不可用');
+                }
+            }, 1000);
+        });
+
+        window.addEventListener('load', function() {
+            if (typeof window.API !== 'undefined' && typeof InterviewManager !== 'undefined') {
+                console.log('✅ 页面加载时JavaScript已可用，立即初始化');
+                initSystem();
+            } else {
+                console.log('⏳ 等待JavaScript文件加载...');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM内容加载完成');
+
+            setTimeout(function() {
+                console.log('⏰ 延迟检查JavaScript状态...');
+
+                if (typeof InterviewManager === 'function') {
+                    console.log('✅ InterviewManager类可用');
+                } else {
+                    console.error('❌ InterviewManager类不可用');
+                }
+
+                if (window.interviewManager) {
+                    console.log('✅ interviewManager实例可用');
+                } else {
+                    console.error('❌ interviewManager实例不可用');
+                }
+
+                if (typeof window.startInterview === 'function') {
+                    console.log('✅ window.startInterview函数可用');
+                } else {
+                    console.error('❌ window.startInterview函数不可用');
+                }
+
+                if (typeof startInterview === 'function') {
+                    console.log('✅ startInterview全局函数可用');
+                } else {
+                    console.error('❌ startInterview全局函数不可用');
+                }
+
+                console.log('🏁 JavaScript状态检查完成');
+            }, 1000);
+        });
+
+        // 页面卸载时清理资源
+        window.addEventListener('beforeunload', function(event) {
+            console.log('🚪 检测到页面关闭/刷新事件');
+            try {
+                if (window.interviewManager) {
+                    if (window.interviewManager.mediaRecorder &&
+                        window.interviewManager.mediaRecorder.state === 'recording') {
+                        window.interviewManager.mediaRecorder.stop();
+                    }
+
+                    if (window.interviewManager.transcriptionInterval) {
+                        clearInterval(window.interviewManager.transcriptionInterval);
+                        window.interviewManager.transcriptionInterval = null;
+                    }
+
+                    if (window.interviewManager.silenceTimeout) {
+                        clearInterval(window.interviewManager.silenceTimeout);
+                        window.interviewManager.silenceTimeout = null;
+                    }
+
+                    if (window.interviewManager.volumeCheckInterval) {
+                        clearInterval(window.interviewManager.volumeCheckInterval);
+                        window.interviewManager.volumeCheckInterval = null;
+                    }
+
+                    if (window.interviewManager.stream) {
+                        window.interviewManager.stream.getTracks().forEach(track => {
+                            try { track.stop(); } catch (e) {}
+                        });
+                        window.interviewManager.stream = null;
+                    }
+                }
+
+                if (window.interviewManager && window.interviewManager.currentSession) {
+                    const sessionId = window.interviewManager.currentSession.session_id;
+                    if (navigator.sendBeacon) {
+                        const data = JSON.stringify({ session_id: sessionId });
+                        navigator.sendBeacon('/api/v1/interview-sessions/' + sessionId + '/complete', data);
+                        console.log('📤 已发送会话完成请求');
+                    }
+                }
+
+                console.log('✅ 页面卸载清理完成');
+            } catch (error) {
+                console.error('❌ 页面卸载清理出错:', error);
+            }
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (typeof console !== 'undefined' && console.debug) console.debug('👁️ 页面不可见');
+            } else {
+                if (typeof console !== 'undefined' && console.debug) console.debug('👁️ 页面可见');
+            }
+        });
+
+        document.addEventListener('pagehide', function(event) {
+            console.log('📱 页面隐藏事件');
+            try {
+                if (window.interviewManager && window.interviewManager.currentSession && navigator.sendBeacon) {
+                    const sessionId = window.interviewManager.currentSession.session_id;
+                    const data = JSON.stringify({ session_id: sessionId });
+                    navigator.sendBeacon('/api/v1/interview-sessions/' + sessionId + '/complete', data);
+                    console.log('📤 页面隐藏时发送会话完成请求');
+                }
+            } catch (error) {
+                console.error('❌ 页面隐藏清理出错:', error);
+            }
+        });
+    </script>
+
+    <script>
+        // 调试日志系统
+        window.debugLogs = [];
+        window.debugPanelVisible = false;
+        window.debugLoggingEnabled = false; // 防止初始化时的循环调用
+        const MAX_DEBUG_LOGS = 200;
+
+        function addDebugLog(message, type = 'info') {
+            try {
+                // 防止在初始化时调用
+                if (!window.debugLoggingEnabled) {
+                    return;
+                }
+                
+                const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+                const logEntry = {
+                    time: timestamp,
+                    message: String(message).substring(0, 500), // 限制消息长度
+                    type: type
+                };
+                
+                window.debugLogs.push(logEntry);
+                
+                // 限制日志数量
+                if (window.debugLogs.length > MAX_DEBUG_LOGS) {
+                    window.debugLogs.shift();
+                }
+                
+                // 如果面板可见，立即更新显示
+                if (window.debugPanelVisible && document.getElementById('debugLogs')) {
+                    try {
+                        updateDebugPanel();
+                    } catch (e) {
+                        // 忽略更新错误
+                    }
+                }
+            } catch (e) {
+                // 静默失败，避免影响主流程
+            }
+        }
+
+        function updateDebugPanel() {
+            try {
+                const debugLogsEl = document.getElementById('debugLogs');
+                if (!debugLogsEl) return;
+                
+                debugLogsEl.innerHTML = '';
+                
+                window.debugLogs.slice(-100).forEach(log => {
+                    try {
+                        const entry = document.createElement('div');
+                        entry.className = `debug-log-entry ${log.type}`;
+                        entry.textContent = `[${log.time}] ${log.message}`;
+                        debugLogsEl.appendChild(entry);
+                    } catch (e) {
+                        // 忽略单个条目错误
+                    }
+                });
+                
+                // 滚动到底部
+                setTimeout(() => {
+                    debugLogsEl.scrollTop = debugLogsEl.scrollHeight;
+                }, 10);
+            } catch (e) {
+                // 忽略更新错误
+            }
+        }
+
+        function toggleDebugPanel() {
+            try {
+                const panel = document.getElementById('debugPanel');
+                if (!panel) return;
+                
+                window.debugPanelVisible = !window.debugPanelVisible;
+                panel.style.display = window.debugPanelVisible ? 'flex' : 'none';
+                
+                if (window.debugPanelVisible) {
+                    updateDebugPanel();
+                }
+            } catch (e) {
+                console.error('切换调试面板失败:', e);
+            }
+        }
+
+        function clearDebugLogs() {
+            try {
+                window.debugLogs = [];
+                updateDebugPanel();
+                if (window.debugLoggingEnabled) {
+                    addDebugLog('日志已清空', 'info');
+                }
+            } catch (e) {
+                console.error('清空日志失败:', e);
+            }
+        }
+
+        // 保存原始console方法
+        const originalLog = console.log.bind(console);
+        const originalError = console.error.bind(console);
+        const originalWarn = console.warn.bind(console);
+
+        // 重写 console.log 等方法，自动记录到调试面板（延迟启用，避免初始化时的循环）
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            if (window.debugLoggingEnabled) {
+                try {
+                    const message = args.map(arg => {
+                        try {
+                            if (typeof arg === 'object') {
+                                return JSON.stringify(arg).substring(0, 200);
+                            }
+                            return String(arg);
+                        } catch (e) {
+                            return '[无法序列化]';
+                        }
+                    }).join(' ');
+                    
+                    if (message.includes('📝') || message.includes('转写') || message.includes('transcript') || 
+                        message.includes('transcriptionContainer') || message.includes('容器') ||
+                        message.includes('✅') || message.includes('🔄') || message.includes('❌')) {
+                        addDebugLog(message, 'info');
+                    }
+                } catch (e) {
+                    // 忽略日志记录错误
+                }
+            }
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            if (window.debugLoggingEnabled) {
+                try {
+                    const message = args.map(arg => {
+                        try {
+                            if (typeof arg === 'object') {
+                                return JSON.stringify(arg).substring(0, 200);
+                            }
+                            return String(arg);
+                        } catch (e) {
+                            return '[无法序列化]';
+                        }
+                    }).join(' ');
+                    addDebugLog(message, 'error');
+                } catch (e) {
+                    // 忽略日志记录错误
+                }
+            }
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            if (window.debugLoggingEnabled) {
+                try {
+                    const message = args.map(arg => {
+                        try {
+                            if (typeof arg === 'object') {
+                                return JSON.stringify(arg).substring(0, 200);
+                            }
+                            return String(arg);
+                        } catch (e) {
+                            return '[无法序列化]';
+                        }
+                    }).join(' ');
+                    addDebugLog(message, 'warning');
+                } catch (e) {
+                    // 忽略日志记录错误
+                }
+            }
+        };
+
+        // 导出到全局，供其他脚本使用
+        window.addDebugLog = addDebugLog;
+        window.toggleDebugPanel = toggleDebugPanel;
+        window.clearDebugLogs = clearDebugLogs;
+        
+        // 测试函数：检查 transcription-section 是否存在
+        window.testTranscriptionSection = function() {
+            const section = document.querySelector('.transcription-section');
+            const content = document.getElementById('transcriptionContent');
+            const container = document.getElementById('transcriptionContainer');
+            
+            console.log('🔍 [测试] transcription-section 是否存在:', !!section);
+            console.log('🔍 [测试] transcriptionContent 是否存在:', !!content);
+            console.log('🔍 [测试] transcriptionContainer 是否存在:', !!container);
+            
+            if (window.addDebugLog) {
+                window.addDebugLog(`🔍 [测试] transcription-section: ${!!section}, transcriptionContent: ${!!content}, transcriptionContainer: ${!!container}`, 'info');
+            }
+            
+            if (section) {
+                // 暴力设置红色背景，测试是否可见
+                section.setAttribute('style', 
+                    'display: flex !important; visibility: visible !important; opacity: 1 !important; flex: 0 0 35% !important; min-height: 200px !important; position: relative !important; z-index: 9999 !important; background: #ff0000 !important; border: 5px solid #00ff00 !important;'
+                );
+                
+                const rect = section.getBoundingClientRect();
+                console.log('🔍 [测试] transcription-section 位置:', rect);
+                alert(`transcription-section 存在！\n位置: top=${rect.top}, left=${rect.left}\n大小: width=${rect.width}, height=${rect.height}\n可见: ${rect.height > 0 && rect.width > 0}`);
+                
+                if (window.addDebugLog) {
+                    window.addDebugLog(`🔍 [测试] transcription-section 位置: top=${rect.top}, height=${rect.height}, visible=${rect.height > 0}`, 'container');
+                }
+            } else {
+                alert('❌ transcription-section 元素不存在！');
+                console.error('❌ [测试] transcription-section 元素不存在！');
+                
+                // 检查父容器
+                const splitLayout = document.querySelector('.mobile-split-layout');
+                if (splitLayout) {
+                    console.log('🔍 [测试] mobile-split-layout 的子元素:', Array.from(splitLayout.children).map(el => ({
+                        className: el.className,
+                        tagName: el.tagName,
+                        display: window.getComputedStyle(el).display
+                    })));
+                    if (window.addDebugLog) {
+                        window.addDebugLog(`🔍 [测试] mobile-split-layout 子元素: ${Array.from(splitLayout.children).map(el => el.className).join(', ')}`, 'info');
+                    }
+                }
+            }
+        };
+
+        // DOM加载完成后启用日志记录
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(() => {
+                    window.debugLoggingEnabled = true;
+                    addDebugLog('调试日志系统已启动', 'info');
+                }, 1000);
+            });
+        } else {
+            setTimeout(() => {
+                window.debugLoggingEnabled = true;
+                addDebugLog('调试日志系统已启动', 'info');
+            }, 1000);
+        }
+
+        console.log('📱 VoiceBridge 移动端面试界面');
+        console.log('📱 移动端优化布局：分屏显示，题目在上，转写在下的固定布局');
+        
+        // 强制确保移动端样式正确应用
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.mobile-interview-container');
+            if (container) {
+                console.log('✅ 移动端容器已找到');
+                // 强制应用样式
+                container.style.minHeight = '100vh';
+                container.style.width = '100%';
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                container.style.overflow = 'hidden';
+                
+                // 立即设置题目和回答区域的flex值（确保布局正确）
+                const qsEl = document.querySelector('.question-section');
+                const tsEl = document.querySelector('.transcription-section');
+                if (qsEl && tsEl) {
+                    qsEl.style.setProperty('flex', '1 1 25%', 'important');
+                    tsEl.style.setProperty('flex', '1 1 auto', 'important');
+                    console.log('✅ DOMContentLoaded: 立即设置flex值 - 题目25%, 回答auto');
+                }
+                
+                // 检查header的布局状态（仅用于调试，不强制修改）
+                const header = document.querySelector('.mobile-interview-container .interview-header');
+                if (header) {
+                    const computedStyle = window.getComputedStyle(header);
+                    const rect = header.getBoundingClientRect();
+                    console.log('🔍 Header布局检查:');
+                    console.log('  display:', computedStyle.display);
+                    console.log('  visibility:', computedStyle.visibility);
+                    console.log('  opacity:', computedStyle.opacity);
+                    console.log('  height:', computedStyle.height);
+                    console.log('  flex:', computedStyle.flex);
+                    console.log('  位置:', rect);
+                    console.log('  是否在视口内:', rect.top >= 0 && rect.top < window.innerHeight);
+                    
+                    if (rect.height === 0 || rect.top < -100) {
+                        console.error('❌ Header高度为0或位置异常，可能是布局计算问题');
+                    }
+                } else {
+                    console.error('❌ Header元素未找到');
+                }
+                
+                // 详细检查各部分区域的flex布局和实际尺寸
+                console.log('\n📊 ========== 各部分区域布局检查 ==========');
+                
+                // 检查题目区域
+                const questionSection = document.querySelector('.question-section');
+                if (questionSection) {
+                    const qsStyle = window.getComputedStyle(questionSection);
+                    const qsRect = questionSection.getBoundingClientRect();
+                    console.log('\n📝 题目区域 (.question-section):');
+                    console.log('  CSS flex值:', qsStyle.flex);
+                    console.log('  CSS flex-grow:', qsStyle.flexGrow);
+                    console.log('  CSS flex-shrink:', qsStyle.flexShrink);
+                    console.log('  CSS flex-basis:', qsStyle.flexBasis);
+                    console.log('  实际高度:', qsRect.height, 'px');
+                    console.log('  实际宽度:', qsRect.width, 'px');
+                    console.log('  位置 top:', qsRect.top, 'px');
+                    console.log('  位置 bottom:', qsRect.bottom, 'px');
+                    console.log('  占视口高度比例:', ((qsRect.height / window.innerHeight) * 100).toFixed(2) + '%');
+                    
+                    // 检查是否有内联样式覆盖
+                    if (questionSection.style.cssText) {
+                        console.warn('  ⚠️ 发现内联样式:', questionSection.style.cssText);
+                    }
+                    
+                    // 检查所有应用的CSS规则
+                    const allRules = [];
+                    for (let sheet of document.styleSheets) {
+                        try {
+                            for (let rule of sheet.cssRules || sheet.rules || []) {
+                                if (rule.selectorText && questionSection.matches(rule.selectorText)) {
+                                    allRules.push({
+                                        selector: rule.selectorText,
+                                        flex: rule.style.flex,
+                                        cssText: rule.cssText
+                                    });
+                                }
+                            }
+                        } catch (e) {
+                            // 跨域样式表可能无法访问
+                        }
+                    }
+                    console.log('  匹配的CSS规则数量:', allRules.length);
+                    if (allRules.length > 0) {
+                        console.log('  匹配的CSS规则:', allRules);
+                    }
+                } else {
+                    console.error('❌ 题目区域未找到');
+                }
+                
+                // 检查按钮区域
+                const buttonSection = document.querySelector('.button-section');
+                if (buttonSection) {
+                    const bsStyle = window.getComputedStyle(buttonSection);
+                    const bsRect = buttonSection.getBoundingClientRect();
+                    console.log('\n🔘 按钮区域 (.button-section):');
+                    console.log('  CSS flex值:', bsStyle.flex);
+                    console.log('  实际高度:', bsRect.height, 'px');
+                    console.log('  占视口高度比例:', ((bsRect.height / window.innerHeight) * 100).toFixed(2) + '%');
+                }
+                
+                // 检查回答内容区域
+                const transcriptionSection = document.querySelector('.transcription-section');
+                if (transcriptionSection) {
+                    const tsStyle = window.getComputedStyle(transcriptionSection);
+                    const tsRect = transcriptionSection.getBoundingClientRect();
+                    console.log('\n💬 回答内容区域 (.transcription-section):');
+                    console.log('  CSS flex值:', tsStyle.flex);
+                    console.log('  CSS flex-grow:', tsStyle.flexGrow);
+                    console.log('  CSS flex-shrink:', tsStyle.flexShrink);
+                    console.log('  CSS flex-basis:', tsStyle.flexBasis);
+                    console.log('  实际高度:', tsRect.height, 'px');
+                    console.log('  实际宽度:', tsRect.width, 'px');
+                    console.log('  位置 top:', tsRect.top, 'px');
+                    console.log('  位置 bottom:', tsRect.bottom, 'px');
+                    console.log('  占视口高度比例:', ((tsRect.height / window.innerHeight) * 100).toFixed(2) + '%');
+                }
+                
+                // 检查父容器
+                const splitLayout = document.querySelector('.mobile-split-layout');
+                if (splitLayout) {
+                    const slStyle = window.getComputedStyle(splitLayout);
+                    const slRect = splitLayout.getBoundingClientRect();
+                    console.log('\n📦 父容器 (.mobile-split-layout):');
+                    console.log('  CSS flex值:', slStyle.flex);
+                    console.log('  实际高度:', slRect.height, 'px');
+                    console.log('  占视口高度比例:', ((slRect.height / window.innerHeight) * 100).toFixed(2) + '%');
+                }
+                
+                // 检查根容器
+                const container = document.querySelector('.mobile-interview-container');
+                if (container) {
+                    const cStyle = window.getComputedStyle(container);
+                    const cRect = container.getBoundingClientRect();
+                    console.log('\n🏠 根容器 (.mobile-interview-container):');
+                    console.log('  实际高度:', cRect.height, 'px');
+                    console.log('  视口高度:', window.innerHeight, 'px');
+                    console.log('  高度差:', (cRect.height - window.innerHeight).toFixed(2), 'px');
+                }
+                
+                console.log('\n📊 ========== 布局检查完成 ==========\n');
+                
+                // 确保分屏布局存在
+                const splitLayoutEl = document.querySelector('.mobile-split-layout');
+                if (!splitLayoutEl) {
+                    console.error('❌ 移动端分屏布局未找到！');
+                } else {
+                    console.log('✅ 移动端分屏布局已找到');
+                    splitLayoutEl.style.flex = '1';
+                    splitLayoutEl.style.display = 'flex';
+                    splitLayoutEl.style.flexDirection = 'column';
+                    splitLayoutEl.style.overflow = 'hidden';
+                    splitLayoutEl.style.order = '2'; // 确保在header之后
+                }
+                
+                // 强制显示转写区域（回答内容模块）- 注意：不设置flex值，让CSS控制占比
+                const transcriptionSectionEl = document.querySelector('.transcription-section');
+                if (transcriptionSectionEl) {
+                    console.log('✅ 找到 transcription-section，强制显示');
+                    transcriptionSectionEl.style.display = 'flex';
+                    transcriptionSectionEl.style.visibility = 'visible';
+                    transcriptionSectionEl.style.opacity = '1';
+                    // 移除内联flex设置，让CSS文件中的 flex: 1 1 20% 生效
+                    transcriptionSectionEl.style.removeProperty('flex'); // 移除可能存在的内联flex
+                    transcriptionSectionEl.style.minHeight = '200px';
+                    
+                    const transcriptionContent = document.getElementById('transcriptionContent');
+                    if (transcriptionContent) {
+                        transcriptionContent.style.display = 'block';
+                        transcriptionContent.style.visibility = 'visible';
+                    }
+                    
+                    const transcriptionContainer = document.getElementById('transcriptionContainer');
+                    if (transcriptionContainer) {
+                        transcriptionContainer.style.display = 'flex';
+                        transcriptionContainer.style.visibility = 'visible';
+                    }
+                    
+                    if (window.addDebugLog) {
+                        window.addDebugLog('✅ DOMContentLoaded: 强制显示 transcription-section', 'container');
+                    }
+                } else {
+                    console.error('❌ transcription-section 未找到！');
+                    if (window.addDebugLog) {
+                        window.addDebugLog('❌ DOMContentLoaded: transcription-section 未找到', 'error');
+                    }
+                }
+                
+                // 立即设置一次flex值，确保布局正确
+                const qsImmediate = document.querySelector('.question-section');
+                const tsImmediate = document.querySelector('.transcription-section');
+                if (qsImmediate && tsImmediate) {
+                    qsImmediate.style.setProperty('flex', '1 1 25%', 'important');
+                    tsImmediate.style.setProperty('flex', '1 1 auto', 'important');
+                    console.log('✅ 立即设置flex值: 题目25%, 回答auto');
+                }
+                
+                // 延迟检查，确保所有样式都已应用
+                setTimeout(function() {
+                    console.log('\n🔍 ========== 延迟检查（500ms后） ==========');
+                    const qsCheck = document.querySelector('.question-section');
+                    const tsCheck = document.querySelector('.transcription-section');
+                    if (qsCheck && tsCheck) {
+                        const qsStyleCheck = window.getComputedStyle(qsCheck);
+                        const tsStyleCheck = window.getComputedStyle(tsCheck);
+                        const qsRectCheck = qsCheck.getBoundingClientRect();
+                        const tsRectCheck = tsCheck.getBoundingClientRect();
+                        
+                        console.log('题目区域实际flex值:', qsStyleCheck.flex);
+                        console.log('题目区域实际高度:', qsRectCheck.height, 'px');
+                        console.log('回答区域实际flex值:', tsStyleCheck.flex);
+                        console.log('回答区域实际高度:', tsRectCheck.height, 'px');
+                        console.log('题目/回答高度比:', (qsRectCheck.height / tsRectCheck.height).toFixed(2));
+                        
+                        // 直接强制应用flex值（使用important确保优先级）
+                        console.log('🔧 强制应用CSS flex值...');
+                        qsCheck.style.setProperty('flex', '1 1 25%', 'important'); // 题目区域25%
+                        tsCheck.style.setProperty('flex', '1 1 auto', 'important'); // 回答内容区域自适应剩余空间
+                        
+                        // 记录当前值用于调试
+                        console.log('📝 设置前 - 题目区域flex:', qsStyleCheck.flex, '高度:', qsRectCheck.height);
+                        console.log('📝 设置前 - 回答区域flex:', tsStyleCheck.flex, '高度:', tsRectCheck.height);
+                        
+                        // 再次检查应用后的值
+                        setTimeout(function() {
+                            const qsStyleCheck2 = window.getComputedStyle(qsCheck);
+                            const tsStyleCheck2 = window.getComputedStyle(tsCheck);
+                            const qsRectCheck2 = qsCheck.getBoundingClientRect();
+                            const tsRectCheck2 = tsCheck.getBoundingClientRect();
+                            
+                            console.log('\n📊 强制应用后的检查:');
+                            console.log('题目区域flex值:', qsStyleCheck2.flex);
+                            console.log('题目区域高度:', qsRectCheck2.height, 'px');
+                            console.log('回答区域flex值:', tsStyleCheck2.flex);
+                            console.log('回答区域高度:', tsRectCheck2.height, 'px');
+                            console.log('题目/回答高度比:', (qsRectCheck2.height / tsRectCheck2.height).toFixed(2));
+                        }, 100);
+                    }
+                    console.log('========== 延迟检查完成 ==========\n');
+                }, 500);
+            } else {
+                console.error('❌ 移动端容器未找到！页面可能加载了错误的HTML结构');
+            }
+            
+            // 检查是否有电脑端的元素
+            const desktopContainer = document.querySelector('.interview-container:not(.mobile-interview-container)');
+            if (desktopContainer) {
+                console.warn('⚠️ 检测到电脑端容器，已隐藏');
+                desktopContainer.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+

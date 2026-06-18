@@ -1,0 +1,99 @@
+# ===========================================
+# VoiceBridge 智能语音面试系统 - 依赖包列表
+# ===========================================
+# 安装方法: pip install -r requirements.txt
+# 更新方法: pip install -r requirements.txt --upgrade
+
+# Web框架
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+websockets>=12.0  # WebSocket服务器支持
+
+# ASR相关
+vosk>=0.3.45
+openai-whisper>=20231117
+
+# 音频处理
+pydub>=0.25.1
+soundfile>=0.12.1
+librosa>=0.10.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# TTS服务现在在独立的conda环境中运行
+# 如需本地TTS功能，请在tts环境中安装相关依赖
+
+# 阿里云SDK（云API部署）
+dashscope>=1.14.0
+
+# 对话管理（可选）
+# rasa>=3.6.0  # 如需使用Rasa对话管理，取消注释
+
+# 工具库
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+aiofiles>=23.2.1
+httpx>=0.25.0  # 异步HTTP客户端
+PyYAML>=6.0.0  # 配置解析
+
+# LLM相关
+openai>=1.0.0  # OpenAI客户端（兼容其他API）
+aiohttp>=3.9.0  # 异步HTTP
+
+# 日志和监控
+loguru>=0.7.0  # 更新到最新稳定版本
+
+# 认证相关（与旧代码对齐：支持 bcrypt 或明文密码）
+bcrypt>=4.0.0
+
+# 图像处理
+
+# 数据库相关
+psycopg2-binary>=2.9.9
+
+# ===========================================
+# 安装说明
+# ===========================================
+# 1. 创建虚拟环境（推荐）
+#    python -m venv venv
+#    source venv/bin/activate  # Linux/Mac
+#    # 或 venv\Scripts\activate  # Windows
+#
+# 2. 安装依赖
+#    pip install -r requirements.txt
+#
+# 3. 如需GPU加速（可选）
+#    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#
+# 4. 验证安装
+#    python -c "import fastapi, uvicorn, websockets; print('安装成功')"
+#
+# 注意事项：
+# - Python版本要求: 3.8+
+# - 如遇依赖冲突，可使用 pip install --upgrade pip setuptools wheel
+# - TTS功能需要单独的conda环境，详见docs/部署/
+
+# ===========================================
+# 安装说明
+# ===========================================
+# 1. 创建虚拟环境（推荐）
+#    python -m venv venv
+#    source venv/bin/activate  # Linux/Mac
+#    # 或 venv\Scripts\activate  # Windows
+#
+# 2. 安装依赖
+#    pip install -r requirements.txt
+#
+# 3. 如需GPU加速（可选）
+#    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#
+# 4. 验证安装
+#    python -c "import fastapi, uvicorn, websockets; print('安装成功')"
+#
+# 注意事项：
+# - Python版本要求: 3.8+
+# - 如遇依赖冲突，可使用 pip install --upgrade pip setuptools wheel
+# - TTS功能需要单独的conda环境，详见docs/部署/
+

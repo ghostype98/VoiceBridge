@@ -1,0 +1,23 @@
+[
+  {"word": "配电网", "weight": 8},
+  {"word": "故障测距", "weight": 10},
+  {"word": "智能电网", "weight": 9},
+  {"word": "电力系统", "weight": 8},
+  {"word": "微服务", "weight": 7},
+  {"word": "分布式系统", "weight": 8},
+  {"word": "容器化", "weight": 7},
+  {"word": "DevOps", "weight": 8},
+  {"word": "CI/CD", "weight": 9},
+  {"word": "Kubernetes", "weight": 8},
+  {"word": "Docker", "weight": 7},
+  {"word": "Spring Boot", "weight": 8},
+  {"word": "React", "weight": 7},
+  {"word": "Vue", "weight": 7},
+  {"word": "Python", "weight": 8},
+  {"word": "Java", "weight": 8},
+  {"word": "JavaScript", "weight": 7},
+  {"word": "MySQL", "weight": 7},
+  {"word": "Redis", "weight": 7},
+  {"word": "MongoDB", "weight": 7}
+]
+
